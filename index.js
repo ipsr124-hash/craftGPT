@@ -4,7 +4,7 @@ const path = require('path');
 
 const PORT = process.env.PORT || 7000;
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
-const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-3.6-flash';
+const DEFAULT_MODEL = process.env.GEMINI_MODEL || 'gemini-3.6-flash';
 
 const SYSTEM_PROMPT = process.env.SYSTEM_PROMPT || `
 Eres una Inteligencia Artificial experta y especializada exclusivamente en Minecraft.
@@ -29,6 +29,7 @@ const server = http.createServer(async (req, res) => {
             try {
                 const data = JSON.parse(body);
                 const userPrompt = data.prompt || '';
+                const selectedModel = data.model || DEFAULT_MODEL;
 
                 if (!GEMINI_API_KEY) {
                     res.writeHead(500, { 'Content-Type': 'application/json' });
@@ -36,7 +37,7 @@ const server = http.createServer(async (req, res) => {
                     return;
                 }
 
-                const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
+                const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${selectedModel}:generateContent?key=${GEMINI_API_KEY}`;
                 
                 const response = await fetch(geminiUrl, {
                     method: 'POST',
@@ -49,12 +50,11 @@ const server = http.createServer(async (req, res) => {
 
                 const result = await response.json();
 
-                // Si la API de Gemini devuelve un error, lo mostramos en el chat
                 if (!response.ok) {
                     console.error("Error de Gemini:", result);
                     const errorMsg = result.error?.message || JSON.stringify(result);
                     res.writeHead(200, { 'Content-Type': 'application/json' });
-                    res.end(JSON.stringify({ respuesta: "Error de la API de Gemini: " + errorMsg }));
+                    res.end(JSON.stringify({ respuesta: `Error de la API (${selectedModel}): ${errorMsg}` }));
                     return;
                 }
 
