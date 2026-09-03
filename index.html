@@ -13,6 +13,7 @@
             display: flex;
             flex-direction: column;
             height: 100vh;
+            overflow: hidden;
         }
         #chat-container {
             flex: 1;
@@ -24,6 +25,10 @@
             max-width: 800px;
             margin: 0 auto;
             width: 100%;
+            scrollbar-width: none; /* Firefox */
+        }
+        #chat-container::-webkit-scrollbar {
+            display: none; /* Chrome, Safari, Edge */
         }
         .message { display: flex; gap: 12px; line-height: 1.6; }
         .user { justify-content: flex-end; }
@@ -80,6 +85,10 @@
             max-height: 150px;
             font-family: inherit;
             padding: 4px 0;
+            scrollbar-width: none;
+        }
+        textarea::-webkit-scrollbar {
+            display: none;
         }
         button {
             background-color: #676767;
@@ -114,7 +123,6 @@
     </div>
 
     <script>
-        // Array para almacenar el historial de la conversación
         let chatHistory = [];
 
         async function sendMessage() {
@@ -124,12 +132,10 @@
             const text = input.value.trim();
             if(!text) return;
 
-            // Mostrar mensaje del usuario en pantalla
             chat.innerHTML += `<div class="message user"><div class="bubble">${text}</div></div>`;
             input.value = '';
             chat.scrollTop = chat.scrollHeight;
 
-            // Agregar el mensaje del usuario al historial
             chatHistory.push({
                 role: "user",
                 parts: [{ text: text }]
@@ -154,7 +160,6 @@
                 document.getElementById(loadingId).remove();
                 chat.innerHTML += `<div class="message assistant"><div class="bubble">${data.respuesta}</div></div>`;
 
-                // Agregar la respuesta de la IA al historial para que no lo olvide
                 chatHistory.push({
                     role: "model",
                     parts: [{ text: data.respuesta }]
