@@ -31,6 +31,7 @@ Porcierto recuerda que para la 26.2 un ejemplo de give es este: /give @a netheri
 Verifica siempre los nombres exactos de los componentes (custom_name con array de texto, enchantments abreviados si aplica, y unbreakable={}).
 Siempre antes de responder busca la sintaxis del comando y aunque a veces pienses que te la sabes revisala, te sueles equivocar agregandole cosas de otras versiones.
 Para agregar encantamientos es asi: enchantments={sharpness:5,unbreaking:3} para la 26.2, no es {levels: eh.
+Los items que haces consumibles y le agregas efectos o los editas, si es un item que ya se puede comer de por si, no te dejara, avisa a los usuarios de eso cuando no les funcione.
 `;
 
 async function callGemini(model, contents) {
@@ -60,13 +61,26 @@ const server = http.createServer(async (req, res) => {
         req.on('end', async () => {
             try {
                 const data = JSON.parse(body);
-                const contents = data.contents || [];
+                let contents = data.contents || [];
                 const selectedModel = data.model || DEFAULT_MODEL;
+                const mcVersion = data.version || '1.21.x';
 
                 if (!GEMINI_API_KEY) {
                     res.writeHead(500, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify({ respuesta: "Error: Falta configurar la variable GEMINI_API_KEY en Render." }));
                     return;
+                }
+
+                if (contents.length > 0) {
+                    contents = contents.map((msg, index) => {
+                        if (index === contents.length - 1 && msg.role === 'user') {
+                            return {
+                                role: 'user',
+                                parts: [{ text: `[Versión de Minecraft objetivo: ${mcVersion}]\n${msg.parts[0].text}` }]
+                            };
+                        }
+                        return msg;
+                    });
                 }
 
                 let { response, result } = await callGemini(selectedModel, contents);
