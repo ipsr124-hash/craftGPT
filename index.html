@@ -25,10 +25,10 @@
             max-width: 800px;
             margin: 0 auto;
             width: 100%;
-            scrollbar-width: none; /* Firefox */
+            scrollbar-width: none;
         }
         #chat-container::-webkit-scrollbar {
-            display: none; /* Chrome, Safari, Edge */
+            display: none;
         }
         .message { display: flex; gap: 12px; line-height: 1.6; }
         .user { justify-content: flex-end; }
@@ -117,6 +117,12 @@
                 <option value="gemini-3.5-flash-lite">Flash-Lite</option>
                 <option value="gemini-1.5-flash">Flash 1.5</option>
             </select>
+            <select id="version-select" title="Versión de Minecraft">
+                <option value="1.21.x">MC 1.21+</option>
+                <option value="1.20.x">MC 1.20</option>
+                <option value="1.19.x">MC 1.19</option>
+                <option value="1.18.x">MC 1.18</option>
+            </select>
             <textarea id="user-input" rows="1" placeholder="Pide un comando, datapack o plugin de Minecraft..."></textarea>
             <button onclick="sendMessage()">↑</button>
         </div>
@@ -129,6 +135,7 @@
             const input = document.getElementById('user-input');
             const chat = document.getElementById('chat-container');
             const modelSelect = document.getElementById('model-select');
+            const versionSelect = document.getElementById('version-select');
             const text = input.value.trim();
             if(!text) return;
 
@@ -142,7 +149,7 @@
             });
 
             const loadingId = 'loading-' + Date.now();
-            chat.innerHTML += `<div class="message assistant" id="${loadingId}"><div class="bubble loading">Pensando (${modelSelect.value})...</div></div>`;
+            chat.innerHTML += `<div class="message assistant" id="${loadingId}"><div class="bubble loading">Pensando (${modelSelect.value} | ${versionSelect.value})...</div></div>`;
             chat.scrollTop = chat.scrollHeight;
 
             try {
@@ -151,7 +158,8 @@
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({
                         contents: chatHistory,
-                        model: modelSelect.value
+                        model: modelSelect.value,
+                        version: versionSelect.value
                     })
                 });
                 
