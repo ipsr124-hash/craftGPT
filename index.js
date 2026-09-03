@@ -26,14 +26,14 @@ Si quieres información de comandos de minecraft y los cambios de las versiones 
 Te digo algunos canales que enseñan comandos, datapacks y funciones que puedes hacer en Minecrat: https://www.youtube.com/@Cl0udWolf, También puedes buscar en otros canales, y como creo que no puedes ver videos, puedes leer los comentarios y la descripción de los videos para ver si hay información útil.
 `;
 
-async function callGemini(model, prompt) {
+async function callGemini(model, contents) {
     const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`;
     const response = await fetch(geminiUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
             system_instruction: { parts: [{ text: SYSTEM_PROMPT }] },
-            contents: [{ parts: [{ text: prompt }] }]
+            contents: contents
         })
     });
     const result = await response.json();
@@ -53,7 +53,7 @@ const server = http.createServer(async (req, res) => {
         req.on('end', async () => {
             try {
                 const data = JSON.parse(body);
-                const userPrompt = data.prompt || '';
+                const contents = data.contents || [];
                 const selectedModel = data.model || DEFAULT_MODEL;
 
                 if (!GEMINI_API_KEY) {
@@ -62,11 +62,11 @@ const server = http.createServer(async (req, res) => {
                     return;
                 }
 
-                let { response, result } = await callGemini(selectedModel, userPrompt);
+                let { response, result } = await callGemini(selectedModel, contents);
 
                 if (!response.ok && selectedModel !== FALLBACK_MODEL) {
                     console.log(`El modelo ${selectedModel} falló. Cambiando automáticamente al respaldo ${FALLBACK_MODEL}...`);
-                    const fallback = await callGemini(FALLBACK_MODEL, userPrompt);
+                    const fallback = await callGemini(FALLBACK_MODEL, contents);
                     response = fallback.response;
                     result = fallback.result;
                 }

@@ -114,6 +114,9 @@
     </div>
 
     <script>
+        // Array para almacenar el historial de la conversación
+        let chatHistory = [];
+
         async function sendMessage() {
             const input = document.getElementById('user-input');
             const chat = document.getElementById('chat-container');
@@ -121,9 +124,16 @@
             const text = input.value.trim();
             if(!text) return;
 
+            // Mostrar mensaje del usuario en pantalla
             chat.innerHTML += `<div class="message user"><div class="bubble">${text}</div></div>`;
             input.value = '';
             chat.scrollTop = chat.scrollHeight;
+
+            // Agregar el mensaje del usuario al historial
+            chatHistory.push({
+                role: "user",
+                parts: [{ text: text }]
+            });
 
             const loadingId = 'loading-' + Date.now();
             chat.innerHTML += `<div class="message assistant" id="${loadingId}"><div class="bubble loading">Pensando (${modelSelect.value})...</div></div>`;
@@ -134,7 +144,7 @@
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({
-                        prompt: text,
+                        contents: chatHistory,
                         model: modelSelect.value
                     })
                 });
@@ -143,6 +153,13 @@
                 
                 document.getElementById(loadingId).remove();
                 chat.innerHTML += `<div class="message assistant"><div class="bubble">${data.respuesta}</div></div>`;
+
+                // Agregar la respuesta de la IA al historial para que no lo olvide
+                chatHistory.push({
+                    role: "model",
+                    parts: [{ text: data.respuesta }]
+                });
+
             } catch(e) {
                 document.getElementById(loadingId).remove();
                 chat.innerHTML += `<div class="message assistant"><div class="bubble" style="color: #ff6b6b;">Error de conexión con el servidor.</div></div>`;
