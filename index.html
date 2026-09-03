@@ -4,9 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CraftGPT</title>
-    <!-- Marked.js para interpretar Markdown real (** y ##) -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <!-- JSZip para empaquetar y descargar el datapack modificado -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -26,7 +24,6 @@
             background-color: #212121;
             border-bottom: 1px solid #2f2f2f;
             display: flex;
-            justify-content: space-between;
             align-items: center;
         }
         #chat-container {
@@ -60,7 +57,6 @@
             max-width: 100%;
             font-family: inherit;
         }
-        /* Estilos Markdown */
         .assistant .bubble h1, .assistant .bubble h2, .assistant .bubble h3 {
             margin: 12px 0 6px 0;
             color: #fff;
@@ -68,7 +64,6 @@
         .assistant .bubble p { margin-bottom: 10px; }
         .assistant .bubble ul, .assistant .bubble ol { margin-left: 20px; margin-bottom: 10px; }
         
-        /* Bloques de código estilo Gemini */
         .code-block-wrapper {
             background-color: #1e1e1e;
             border: 1px solid #333;
@@ -117,21 +112,22 @@
             gap: 8px;
             position: relative;
         }
-        select, .custom-btn-select {
+        select, .custom-plus-btn {
             background-color: #383838;
             color: #ececec;
             border: none;
-            padding: 6px 10px;
+            padding: 6px 12px;
             border-radius: 16px;
             outline: none;
             cursor: pointer;
-            font-size: 13px;
+            font-size: 14px;
+            font-weight: bold;
             font-family: inherit;
             display: flex;
             align-items: center;
             justify-content: center;
         }
-        select:hover, .custom-btn-select:hover { background-color: #444; }
+        select:hover, .custom-plus-btn:hover { background-color: #444; }
         textarea {
             flex: 1;
             background: transparent;
@@ -180,10 +176,11 @@
             padding: 6px 12px;
             border-radius: 12px;
             cursor: pointer;
-            font-size: 12px;
+            font-size: 13px;
             display: inline-flex;
             align-items: center;
             gap: 6px;
+            margin-top: 10px;
         }
         .download-zip-btn:hover { background-color: #367c53; }
     </style>
@@ -191,7 +188,6 @@
 <body>
     <div id="header">
         <span>CraftGPT</span>
-        <button class="download-zip-btn" onclick="downloadDatapackZip()">📦 Descargar Datapack Modificado (.zip)</button>
     </div>
     
     <div id="chat-container"></div>
@@ -210,7 +206,7 @@
                 <option value="1.19.x">MC 1.19</option>
                 <option value="1.18.x">MC 1.18</option>
             </select>
-            <label class="custom-btn-select" title="Adjuntar archivo (.mcfunction, .json, .txt)">
+            <label class="custom-plus-btn" title="Adjuntar archivo (.mcfunction, .json, .txt)">
                 +
                 <input type="file" id="file-input" style="display: none;" onchange="handleFileSelect(event)">
             </label>
@@ -223,7 +219,6 @@
         let chatHistory = [];
         let attachedFileText = null;
         let attachedFileName = "";
-        let lastAssistantFiles = {};
 
         function handleFileSelect(event) {
             const file = event.target.files[0];
@@ -272,13 +267,9 @@
             });
         }
 
-        async function downloadDatapackZip() {
-            if (Object.keys(lastAssistantFiles).length === 0) {
-                alert('No hay archivos generados recientes para empaquetar en ZIP.');
-                return;
-            }
+        async function downloadDatapackZip(filesObj) {
             const zip = new JSZip();
-            for (const [filePath, content] of Object.entries(lastAssistantFiles)) {
+            for (const [filePath, content] of Object.entries(filesObj)) {
                 zip.file(filePath, content);
             }
             const content = await zip.generateAsync({ type: 'blob' });
@@ -295,11 +286,13 @@
         function extractFilesFromResponse(text) {
             const regex = /===\s*ARCHIVO:\s*([^\s=]+)\s*===\s*([\s\S]*?)(?=(===\s*ARCHIVO:|$))/g;
             let match;
+            let extracted = {};
             while ((match = regex.exec(text)) !== null) {
                 const filePath = match[1].trim();
                 const fileContent = match[2].trim();
-                lastAssistantFiles[filePath] = fileContent;
+                extracted[filePath] = fileContent;
             }
+            return extracted;
         }
 
         async function sendMessage() {
@@ -348,10 +341,19 @@
                 
                 document.getElementById(loadingId).remove();
                 
-                extractFilesFromResponse(data.respuesta);
-
+                const responseFiles = extractFilesFromResponse(data.respuesta);
                 const formattedHtml = formatMarkdown(data.respuesta);
-                chat.innerHTML += `<div class="message assistant"><div class="bubble">${formattedHtml}</div></div>`;
+
+                let messageHtml = `<div class="message assistant"><div class="bubble">${formattedHtml}`;
+                
+                if (Object.keys(responseFiles).length > 0) {
+                    const uniqueBtnId = 'download-btn-' + Date.now();
+                    window[uniqueBtnId] = responseFiles;
+                    messageHtml += `<br><button class="download-zip-btn" onclick="downloadDatapackZip(window['${uniqueBtnId}'])">📦 Descargar Datapack Modificado (.zip)</button>`;
+                }
+
+                messageHtml += `</div></div>`;
+                chat.innerHTML += messageHtml;
 
                 chatHistory.push({
                     role: "model",
