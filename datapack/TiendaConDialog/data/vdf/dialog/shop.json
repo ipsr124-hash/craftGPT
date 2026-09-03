@@ -1,0 +1,91 @@
+{
+  "type": "minecraft:multi_action",
+  "columns": 1,
+  "exit_action": {
+    "label": {
+      "translate": "gui.back"
+    },
+    "width": 200
+  },
+  "external_title": {
+    "translate": "menu.custom_options"
+  },
+  "title": {
+    "text": "Shop"
+  },
+  "actions": [
+    {
+      "label": {
+        "text": "150$ Lanza"
+      },
+      "width": 150,
+      "action": {
+        "type": "minecraft:run_command",
+        "command": "/trigger lanza set 1"
+      }
+    },
+    {
+      "label": {
+        "text": "250$ Maza"
+      },
+      "action": {
+        "type": "minecraft:run_command",
+        "command": "/trigger maza set 1"
+      }
+    },
+    {
+      "label": {
+        "text": "65$ Prisa Minera"
+      },
+      "action": {
+        "type": "minecraft:run_command",
+        "command": "/trigger prisa set 1"
+      }
+    },
+    {
+      "label": {
+        "text": "100$ Resistencia"
+      },
+      "action": {
+        "type": "minecraft:run_command",
+        "command": "/trigger resistencia set 1"
+      }
+    },
+    {
+      "label": {
+        "text": "100$ Tótem"
+      },
+      "action": {
+        "type": "minecraft:run_command",
+        "command": "/trigger totem set 1"
+      }
+    },
+    {
+      "label": {
+        "text": "75$ Manzanas doradas"
+      },
+      "action": {
+        "type": "minecraft:run_command",
+        "command": "/trigger manzanas set 1"
+      }
+    },
+    {
+      "label": {
+        "text": "45$ Perlas de ender"
+      },
+      "action": {
+        "type": "minecraft:run_command",
+        "command": "/trigger perlas set 1"
+      }
+    },
+    {
+      "label": {
+        "text": "25$ Telarañas"
+      },
+      "action": {
+        "type": "minecraft:run_command",
+        "command": "/trigger cobweb set 1"
+      }
+    }
+  ]
+}

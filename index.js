@@ -7,6 +7,36 @@ const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
 const DEFAULT_MODEL = process.env.GEMINI_MODEL || 'gemini-3.6-flash';
 const FALLBACK_MODEL = 'gemini-3.5-flash-lite';
 
+// Función para leer recursivamente toda la carpeta del datapack
+function readDatapackFolder(dir, baseDir = dir) {
+    let structureText = "";
+    try {
+        if (!fs.existsSync(dir)) return "No se encontró la carpeta 'datapack' en el proyecto.";
+        const list = fs.readdirSync(dir);
+        list.forEach(file => {
+            const filePath = path.join(dir, file);
+            const stat = fs.statSync(filePath);
+            if (stat && stat.isDirectory()) {
+                structureText += readDatapackFolder(filePath, baseDir);
+            } else {
+                // Leer archivos relevantes de texto y código del datapack
+                if (['.mcfunction', '.json', '.mcmeta', '.txt'].includes(path.extname(file))) {
+                    const relativePath = path.relative(baseDir, filePath);
+                    const content = fs.readFileSync(filePath, 'utf8');
+                    structureText += `\n=== ARCHIVO: ${relativePath} ===\n${content}\n`;
+                }
+            }
+        });
+    } catch (e) {
+        structureText = "Error al leer la carpeta del datapack: " + e.message;
+    }
+    return structureText;
+}
+
+// Cargar la estructura completa de la carpeta 'datapack' local
+const datapackPath = path.join(__dirname, 'datapack');
+const datapackContent = readDatapackFolder(datapackPath);
+
 const SYSTEM_PROMPT = process.env.SYSTEM_PROMPT || `
 Eres una Inteligencia Artificial experta y especializada exclusivamente en Minecraft.
 Tu objetivo es ayudar al usuario a crear:
@@ -32,6 +62,17 @@ Verifica siempre los nombres exactos de los componentes (custom_name con array d
 Siempre antes de responder busca la sintaxis del comando y aunque a veces pienses que te la sabes revisala, te sueles equivocar agregandole cosas de otras versiones.
 Para agregar encantamientos es asi: enchantments={sharpness:5,unbreaking:3} para la 26.2, no es {levels: eh.
 Los items que haces consumibles y le agregas efectos o los editas, si es un item que ya se puede comer de por si, no te dejara, avisa a los usuarios de eso cuando no les funcione.
+
+REGLA CLAVE PARA MENÚS Y TIENDAS (/dialog):
+- Las tiendas y menús forman parte de la estructura de carpetas de un datapack.
+- Si el usuario te pide un menú utilizando el comando /dialog o te pide transformar una tienda existente en un menú, debes modificar la lógica: elimina el sistema de compra/venta o economía de la tienda y conviértelo por completo en un menú interactivo de opciones mediante /dialog.
+
+ESTRUCTURA Y CONTENIDO ACTUAL DEL DATAPACK DEL USUARIO (Carpeta 'datapack'):
+\`\`\`
+${datapackContent}
+\`\`\`
+
+Adapta siempre los comandos, sintaxis y estructuras a la versión de Minecraft indicada.
 `;
 
 async function callGemini(model, contents) {

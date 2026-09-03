@@ -38,6 +38,7 @@
             padding: 12px 16px;
             border-radius: 18px;
             max-width: 80%;
+            white-space: pre-wrap;
         }
         .assistant { justify-content: flex-start; }
         .assistant .bubble {
@@ -59,6 +60,7 @@
             padding: 8px 12px;
             align-items: center;
             gap: 8px;
+            position: relative;
         }
         select {
             background-color: #383838;
@@ -71,9 +73,7 @@
             font-size: 13px;
             font-family: inherit;
         }
-        select:hover {
-            background-color: #444;
-        }
+        select:hover { background-color: #444; }
         textarea {
             flex: 1;
             background: transparent;
@@ -87,10 +87,31 @@
             padding: 4px 0;
             scrollbar-width: none;
         }
-        textarea::-webkit-scrollbar {
+        textarea::-webkit-scrollbar { display: none; }
+        .attach-btn {
+            background: transparent;
+            border: none;
+            color: #aaa;
+            cursor: pointer;
+            font-size: 18px;
+            padding: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .attach-btn:hover { color: #fff; background: transparent; width: auto; height: auto; border-radius: 0; }
+        #file-indicator {
+            font-size: 11px;
+            color: #4CAF50;
+            position: absolute;
+            top: -22px;
+            left: 16px;
+            background: #252525;
+            padding: 2px 8px;
+            border-radius: 8px;
             display: none;
         }
-        button {
+        button.send-btn {
             background-color: #676767;
             border: none;
             color: white;
@@ -104,7 +125,7 @@
             align-items: center;
             justify-content: center;
         }
-        button:hover { background-color: #8e8e8e; }
+        button.send-btn:hover { background-color: #8e8e8e; }
     </style>
 </head>
 <body>
@@ -112,6 +133,7 @@
     
     <div id="input-container">
         <div class="input-box">
+            <div id="file-indicator"></div>
             <select id="model-select" title="Seleccionar modelo">
                 <option value="gemini-3.6-flash">Flash 3.6</option>
                 <option value="gemini-3.5-flash-lite">Flash-Lite</option>
@@ -123,29 +145,62 @@
                 <option value="1.19.x">MC 1.19</option>
                 <option value="1.18.x">MC 1.18</option>
             </select>
+            <label class="attach-btn" title="Adjuntar archivo (.mcfunction, .json, .txt)">
+                📎
+                <input type="file" id="file-input" style="display: none;" onchange="handleFileSelect(event)">
+            </label>
             <textarea id="user-input" rows="1" placeholder="Pide un comando, datapack o plugin de Minecraft..."></textarea>
-            <button onclick="sendMessage()">↑</button>
+            <button class="send-btn" onclick="sendMessage()">↑</button>
         </div>
     </div>
 
     <script>
         let chatHistory = [];
+        let attachedFileText = null;
+        let attachedFileName = "";
+
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                attachedFileText = e.target.result;
+                attachedFileName = file.name;
+                const indicator = document.getElementById('file-indicator');
+                indicator.textContent = `📎 Archivo adjunto: ${file.name}`;
+                indicator.style.display = 'block';
+            };
+            reader.readAsText(file);
+        }
 
         async function sendMessage() {
             const input = document.getElementById('user-input');
             const chat = document.getElementById('chat-container');
             const modelSelect = document.getElementById('model-select');
             const versionSelect = document.getElementById('version-select');
-            const text = input.value.trim();
-            if(!text) return;
+            let text = input.value.trim();
 
-            chat.innerHTML += `<div class="message user"><div class="bubble">${text}</div></div>`;
+            if (!text && !attachedFileText) return;
+
+            // Construir el texto final combinando el archivo adjunto si existe
+            let messageToSend = text;
+            if (attachedFileText) {
+                messageToSend = `[Archivo adjunto: ${attachedFileName}]\n\`\`\`\n${attachedFileText}\n\`\`\`\n\n${text}`;
+                // Limpiar archivo adjunto tras enviarlo
+                attachedFileText = null;
+                attachedFileName = "";
+                document.getElementById('file-indicator').style.display = 'none';
+                document.getElementById('file-input').value = "";
+            }
+
+            chat.innerHTML += `<div class="message user"><div class="bubble">${messageToSend}</div></div>`;
             input.value = '';
             chat.scrollTop = chat.scrollHeight;
 
             chatHistory.push({
                 role: "user",
-                parts: [{ text: text }]
+                parts: [{ text: messageToSend }]
             });
 
             const loadingId = 'loading-' + Date.now();
