@@ -4,7 +4,7 @@ const path = require('path');
 
 const PORT = process.env.PORT || 7000;
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
-const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.0-flash';
+const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-3.6-flash';
 
 const SYSTEM_PROMPT = process.env.SYSTEM_PROMPT || `
 Eres una Inteligencia Artificial experta y especializada exclusivamente en Minecraft.
