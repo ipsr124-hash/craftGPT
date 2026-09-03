@@ -3,7 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IA Minecraft</title>
+    <title>CraftGPT</title>
+    <!-- Marked.js para interpretar Markdown real (** y ##) -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <!-- JSZip para empaquetar y descargar el datapack modificado -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
@@ -14,6 +18,16 @@
             flex-direction: column;
             height: 100vh;
             overflow: hidden;
+        }
+        #header {
+            padding: 14px 24px;
+            font-size: 18px;
+            font-weight: bold;
+            background-color: #212121;
+            border-bottom: 1px solid #2f2f2f;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
         #chat-container {
             flex: 1;
@@ -27,9 +41,7 @@
             width: 100%;
             scrollbar-width: none;
         }
-        #chat-container::-webkit-scrollbar {
-            display: none;
-        }
+        #chat-container::-webkit-scrollbar { display: none; }
         .message { display: flex; gap: 12px; line-height: 1.6; }
         .user { justify-content: flex-end; }
         .user .bubble {
@@ -40,15 +52,58 @@
             max-width: 80%;
             white-space: pre-wrap;
         }
-        .assistant { justify-content: flex-start; }
+        .assistant { justify-content: flex-start; width: 100%; }
         .assistant .bubble {
             background-color: transparent;
             color: #ececec;
             padding: 12px 0;
             max-width: 100%;
-            white-space: pre-wrap;
             font-family: inherit;
         }
+        /* Estilos Markdown */
+        .assistant .bubble h1, .assistant .bubble h2, .assistant .bubble h3 {
+            margin: 12px 0 6px 0;
+            color: #fff;
+        }
+        .assistant .bubble p { margin-bottom: 10px; }
+        .assistant .bubble ul, .assistant .bubble ol { margin-left: 20px; margin-bottom: 10px; }
+        
+        /* Bloques de código estilo Gemini */
+        .code-block-wrapper {
+            background-color: #1e1e1e;
+            border: 1px solid #333;
+            border-radius: 8px;
+            margin: 12px 0;
+            overflow: hidden;
+        }
+        .code-header {
+            background-color: #2a2a2a;
+            padding: 6px 12px;
+            font-size: 12px;
+            color: #b0b0b0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #333;
+        }
+        .copy-btn {
+            background: transparent;
+            border: none;
+            color: #b0b0b0;
+            cursor: pointer;
+            font-size: 12px;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+        .copy-btn:hover { background-color: #383838; color: #fff; }
+        .code-block-wrapper pre {
+            padding: 12px;
+            overflow-x: auto;
+            font-family: Consolas, Monaco, monospace;
+            font-size: 13px;
+            color: #dcdcdc;
+        }
+
         .loading { color: #888; font-style: italic; }
         #input-container { padding: 20px; background-color: #212121; }
         .input-box {
@@ -62,7 +117,7 @@
             gap: 8px;
             position: relative;
         }
-        select {
+        select, .custom-btn-select {
             background-color: #383838;
             color: #ececec;
             border: none;
@@ -72,8 +127,11 @@
             cursor: pointer;
             font-size: 13px;
             font-family: inherit;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
-        select:hover { background-color: #444; }
+        select:hover, .custom-btn-select:hover { background-color: #444; }
         textarea {
             flex: 1;
             background: transparent;
@@ -88,18 +146,7 @@
             scrollbar-width: none;
         }
         textarea::-webkit-scrollbar { display: none; }
-        .attach-btn {
-            background: transparent;
-            border: none;
-            color: #aaa;
-            cursor: pointer;
-            font-size: 18px;
-            padding: 4px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .attach-btn:hover { color: #fff; background: transparent; width: auto; height: auto; border-radius: 0; }
+        
         #file-indicator {
             font-size: 11px;
             color: #4CAF50;
@@ -126,9 +173,27 @@
             justify-content: center;
         }
         button.send-btn:hover { background-color: #8e8e8e; }
+        .download-zip-btn {
+            background-color: #2b5c3f;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 12px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .download-zip-btn:hover { background-color: #367c53; }
     </style>
 </head>
 <body>
+    <div id="header">
+        <span>CraftGPT</span>
+        <button class="download-zip-btn" onclick="downloadDatapackZip()">📦 Descargar Datapack Modificado (.zip)</button>
+    </div>
+    
     <div id="chat-container"></div>
     
     <div id="input-container">
@@ -145,8 +210,8 @@
                 <option value="1.19.x">MC 1.19</option>
                 <option value="1.18.x">MC 1.18</option>
             </select>
-            <label class="attach-btn" title="Adjuntar archivo (.mcfunction, .json, .txt)">
-                📎
+            <label class="custom-btn-select" title="Adjuntar archivo (.mcfunction, .json, .txt)">
+                +
                 <input type="file" id="file-input" style="display: none;" onchange="handleFileSelect(event)">
             </label>
             <textarea id="user-input" rows="1" placeholder="Pide un comando, datapack o plugin de Minecraft..."></textarea>
@@ -158,6 +223,7 @@
         let chatHistory = [];
         let attachedFileText = null;
         let attachedFileName = "";
+        let lastAssistantFiles = {};
 
         function handleFileSelect(event) {
             const file = event.target.files[0];
@@ -174,6 +240,68 @@
             reader.readAsText(file);
         }
 
+        function formatMarkdown(text) {
+            let html = marked.parse(text);
+            
+            html = html.replace(/<pre><code(?:\s+class="([^"]*)")?>([\s\S]*?)<\/code><\/pre>/g, (match, langClass, codeContent) => {
+                const lang = langClass ? langClass.replace('language-', '') : 'código';
+                const uniqueId = 'code-' + Math.random().toString(36).substr(2, 9);
+                
+                return `
+                    <div class="code-block-wrapper">
+                        <div class="code-header">
+                            <span>${lang}</span>
+                            <button class="copy-btn" onclick="copyCode('${uniqueId}')">Copiar</button>
+                        </div>
+                        <pre><code id="${uniqueId}">${codeContent}</code></pre>
+                    </div>
+                `;
+            });
+
+            return html;
+        }
+
+        function copyCode(elementId) {
+            const el = document.getElementById(elementId);
+            if (!el) return;
+            const text = el.innerText;
+            navigator.clipboard.writeText(text).then(() => {
+                const btn = el.closest('.code-block-wrapper').querySelector('.copy-btn');
+                btn.textContent = '¡Copiado!';
+                setTimeout(() => { btn.textContent = 'Copiar'; }, 2000);
+            });
+        }
+
+        async function downloadDatapackZip() {
+            if (Object.keys(lastAssistantFiles).length === 0) {
+                alert('No hay archivos generados recientes para empaquetar en ZIP.');
+                return;
+            }
+            const zip = new JSZip();
+            for (const [filePath, content] of Object.entries(lastAssistantFiles)) {
+                zip.file(filePath, content);
+            }
+            const content = await zip.generateAsync({ type: 'blob' });
+            const url = URL.createObjectURL(content);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'datapack_modificado.zip';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function extractFilesFromResponse(text) {
+            const regex = /===\s*ARCHIVO:\s*([^\s=]+)\s*===\s*([\s\S]*?)(?=(===\s*ARCHIVO:|$))/g;
+            let match;
+            while ((match = regex.exec(text)) !== null) {
+                const filePath = match[1].trim();
+                const fileContent = match[2].trim();
+                lastAssistantFiles[filePath] = fileContent;
+            }
+        }
+
         async function sendMessage() {
             const input = document.getElementById('user-input');
             const chat = document.getElementById('chat-container');
@@ -183,11 +311,9 @@
 
             if (!text && !attachedFileText) return;
 
-            // Construir el texto final combinando el archivo adjunto si existe
             let messageToSend = text;
             if (attachedFileText) {
                 messageToSend = `[Archivo adjunto: ${attachedFileName}]\n\`\`\`\n${attachedFileText}\n\`\`\`\n\n${text}`;
-                // Limpiar archivo adjunto tras enviarlo
                 attachedFileText = null;
                 attachedFileName = "";
                 document.getElementById('file-indicator').style.display = 'none';
@@ -221,7 +347,11 @@
                 const data = await res.json();
                 
                 document.getElementById(loadingId).remove();
-                chat.innerHTML += `<div class="message assistant"><div class="bubble">${data.respuesta}</div></div>`;
+                
+                extractFilesFromResponse(data.respuesta);
+
+                const formattedHtml = formatMarkdown(data.respuesta);
+                chat.innerHTML += `<div class="message assistant"><div class="bubble">${formattedHtml}</div></div>`;
 
                 chatHistory.push({
                     role: "model",

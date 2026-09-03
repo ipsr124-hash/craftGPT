@@ -7,7 +7,6 @@ const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
 const DEFAULT_MODEL = process.env.GEMINI_MODEL || 'gemini-3.6-flash';
 const FALLBACK_MODEL = 'gemini-3.5-flash-lite';
 
-// Función para leer recursivamente toda la carpeta del datapack
 function readDatapackFolder(dir, baseDir = dir) {
     let structureText = "";
     try {
@@ -19,7 +18,6 @@ function readDatapackFolder(dir, baseDir = dir) {
             if (stat && stat.isDirectory()) {
                 structureText += readDatapackFolder(filePath, baseDir);
             } else {
-                // Leer archivos relevantes de texto y código del datapack
                 if (['.mcfunction', '.json', '.mcmeta', '.txt'].includes(path.extname(file))) {
                     const relativePath = path.relative(baseDir, filePath);
                     const content = fs.readFileSync(filePath, 'utf8');
@@ -33,7 +31,6 @@ function readDatapackFolder(dir, baseDir = dir) {
     return structureText;
 }
 
-// Cargar la estructura completa de la carpeta 'datapack' local
 const datapackPath = path.join(__dirname, 'datapack');
 const datapackContent = readDatapackFolder(datapackPath);
 
@@ -49,7 +46,7 @@ Lee sobre estas fuentes y basa tus respuestas en ellas:
 - Documentación de Datapacks: https://minecraft.fandom.com/wiki/Data_Pack
 - Documentación de Paper: https://papermc.io/
 - Documentación de Spigot: https://www.spigotmc.org/
-También que sepas que la actual versión es la 26.2, aunque se va actualizando, asi que siempre lee la wiki oficial para ver si hay cambios. No inventes información, si no sabes algo, dilo claramente.
+También que sepas que la actual versión es la 26.2, aunque se va updating, asi que siempre lee la wiki oficial para ver si hay cambios. No inventes información, si no sabes algo, dilo claramente.
 Pregunta al usuario que versión de Minecraft está usando para adaptar las respuestas a esa versión. También va cambiando la sintaxis de los comandos, así que siempre busca la sintaxis correcta en la wiki.
 Tambien te recomiendo leer en Reddit y en foros para poder enterarte de como son las cosas y soluciones.
 Si quieres información de comandos de minecraft y los cambios de las versiones hay una web que crea comandos y más cosas: https://www.gamergeeks.net/apps/minecraft/
@@ -66,6 +63,9 @@ Los items que haces consumibles y le agregas efectos o los editas, si es un item
 REGLA CLAVE PARA MENÚS Y TIENDAS (/dialog):
 - Las tiendas y menús forman parte de la estructura de carpetas de un datapack.
 - Si el usuario te pide un menú utilizando el comando /dialog o te pide transformar una tienda existente en un menú, debes modificar la lógica: elimina el sistema de compra/venta o economía de la tienda y conviértelo por completo en un menú interactivo de opciones mediante /dialog.
+
+FORMATO DE ARCHIVOS:
+- Cuando modifiques o crees archivos del datapack, indícalo claramente con el formato \`=== ARCHIVO: ruta/archivo.extension ===\` seguido del bloque de código para que la interfaz pueda empaquetarlo y descargarlo automáticamente.
 
 ESTRUCTURA Y CONTENIDO ACTUAL DEL DATAPACK DEL USUARIO (Carpeta 'datapack'):
 \`\`\`
@@ -127,14 +127,12 @@ const server = http.createServer(async (req, res) => {
                 let { response, result } = await callGemini(selectedModel, contents);
 
                 if (!response.ok && selectedModel !== FALLBACK_MODEL) {
-                    console.log(`El modelo ${selectedModel} falló. Cambiando automáticamente al respaldo ${FALLBACK_MODEL}...`);
                     const fallback = await callGemini(FALLBACK_MODEL, contents);
                     response = fallback.response;
                     result = fallback.result;
                 }
 
                 if (!response.ok) {
-                    console.error("Error de Gemini:", result);
                     const errorMsg = result.error?.message || JSON.stringify(result);
                     res.writeHead(200, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify({ respuesta: `Error de la API: ${errorMsg}` }));
