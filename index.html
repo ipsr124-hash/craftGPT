@@ -64,12 +64,34 @@
         .assistant .bubble p { margin-bottom: 10px; }
         .assistant .bubble ul, .assistant .bubble ol { margin-left: 20px; margin-bottom: 10px; }
         
+        /* Estilo para reemplazar "=== ARCHIVO: ruta ===" por una etiqueta minimalista */
+        .minimal-file-path {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background-color: #2a2a2a;
+            color: #9cdcfe;
+            padding: 4px 10px;
+            border-radius: 6px 6px 0 0;
+            font-size: 12px;
+            font-family: Consolas, monospace;
+            border: 1px solid #333;
+            border-bottom: none;
+            margin-top: 14px;
+            margin-bottom: -12px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Bloque de código adaptado como Gemini */
         .code-block-wrapper {
             background-color: #1e1e1e;
             border: 1px solid #333;
             border-radius: 8px;
             margin: 12px 0;
             overflow: hidden;
+            position: relative;
+            z-index: 0;
         }
         .code-header {
             background-color: #2a2a2a;
@@ -91,17 +113,22 @@
             border-radius: 4px;
         }
         .copy-btn:hover { background-color: #383838; color: #fff; }
+        
         .code-block-wrapper pre {
-            padding: 12px;
-            overflow-x: auto;
+            padding: 16px;
             font-family: Consolas, Monaco, monospace;
             font-size: 13px;
             color: #dcdcdc;
+            margin: 0;
+            /* SE QUITA LA BARRA HORIZONTAL (Ajuste de líneas) */
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            overflow-x: hidden;
         }
 
         .loading-action { color: #888; font-style: italic; display: flex; align-items: center; gap: 8px; }
         
-        /* Estilo tarjeta de descarga datapack (tipo la imagen facilitada, pero con tema negro) */
+        /* Tarjeta de descarga de Datapack */
         .datapack-card {
             background-color: #1e1e1e;
             border: 1px solid #333;
@@ -113,11 +140,7 @@
             margin-top: 14px;
             max-width: 380px;
         }
-        .datapack-info {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
+        .datapack-info { display: flex; align-items: center; gap: 12px; }
         .datapack-icon-box {
             background-color: #2a2a2a;
             border: 1px solid #3a3a3a;
@@ -128,11 +151,7 @@
             justify-content: center;
             color: #9cdcfe;
         }
-        .datapack-filename {
-            font-size: 14px;
-            color: #ececec;
-            font-weight: 500;
-        }
+        .datapack-filename { font-size: 14px; color: #ececec; font-weight: 500; }
         .datapack-download-btn {
             background: transparent;
             border: 1px solid #444;
@@ -143,10 +162,7 @@
             font-size: 13px;
             font-weight: 500;
         }
-        .datapack-download-btn:hover {
-            background-color: #333;
-            border-color: #555;
-        }
+        .datapack-download-btn:hover { background-color: #333; border-color: #555; }
 
         #input-container { padding: 20px; background-color: #212121; }
         .input-box {
@@ -244,7 +260,7 @@
                 +
                 <input type="file" id="file-input" style="display: none;" onchange="handleFileSelect(event)">
             </label>
-            <textarea id="user-input" rows="1" placeholder="Pide un comando, datapack o plugin de Minecraft..."></textarea>
+            <textarea id="user-input" rows="1" placeholder="Escribe un mensaje..."></textarea>
             <button class="send-btn" onclick="sendMessage()">↑</button>
         </div>
     </div>
@@ -255,11 +271,10 @@
         let attachedFileName = "";
 
         const geminiThoughts = [
-            "Analizando la estructura del datapack...",
-            "Consultando la documentación oficial y la Wiki...",
-            "Verificando la sintaxis y los componentes...",
-            "Adaptando comandos para la versión seleccionada...",
-            "Estructurando la respuesta final..."
+            "Analizando la estructura...",
+            "Procesando respuesta...",
+            "Generando código...",
+            "Finalizando..."
         ];
 
         function handleFileSelect(event) {
@@ -278,8 +293,14 @@
         }
 
         function formatMarkdown(text) {
-            let html = marked.parse(text);
+            // Convierte el texto "=== ARCHIVO: ruta ===" en una pestaña minimalista flotante arriba del código
+            let processedText = text.replace(/===\s*ARCHIVO:\s*([^\s=]+)\s*===/g, 
+                '\n<div class="minimal-file-path"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="13 2 13 9 20 9"></polyline></svg> $1</div>\n'
+            );
+
+            let html = marked.parse(processedText);
             
+            // Procesa los bloques de código y aplica 'white-space: pre-wrap' para eliminar el scroll horizontal
             html = html.replace(/<pre><code(?:\s+class="([^"]*)")?>([\s\S]*?)<\/code><\/pre>/g, (match, langClass, codeContent) => {
                 const lang = langClass ? langClass.replace('language-', '') : 'código';
                 const uniqueId = 'code-' + Math.random().toString(36).substr(2, 9);
@@ -318,7 +339,7 @@
             const url = URL.createObjectURL(content);
             const a = document.createElement('a');
             a.href = url;
-            a.download = 'datapack_modificado.zip';
+            a.download = 'datapack_generado.zip';
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
@@ -414,7 +435,7 @@
                                 <div class="datapack-icon-box">
                                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
                                 </div>
-                                <span class="datapack-filename">datapack_modificado.zip</span>
+                                <span class="datapack-filename">datapack_generado.zip</span>
                             </div>
                             <button class="datapack-download-btn" onclick="downloadDatapackZip(window['${uniqueBtnId}'])">Descargar</button>
                         </div>
