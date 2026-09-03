@@ -5,7 +5,7 @@ const path = require('path');
 const PORT = process.env.PORT || 7000;
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
 const DEFAULT_MODEL = process.env.GEMINI_MODEL || 'gemini-3.6-flash';
-const FALLBACK_MODEL = 'gemini-2.0-flash-lite';
+const FALLBACK_MODEL = 'gemini-3.5-flash-lite';
 
 const SYSTEM_PROMPT = process.env.SYSTEM_PROMPT || `
 Eres una Inteligencia Artificial experta y especializada exclusivamente en Minecraft.
@@ -62,10 +62,8 @@ const server = http.createServer(async (req, res) => {
                     return;
                 }
 
-                // Intentar con el modelo elegido
                 let { response, result } = await callGemini(selectedModel, userPrompt);
 
-                // Si falla o hay saturación, intentamos automáticamente con el modelo ligero (Flash-Lite)
                 if (!response.ok && selectedModel !== FALLBACK_MODEL) {
                     console.log(`El modelo ${selectedModel} falló. Cambiando automáticamente al respaldo ${FALLBACK_MODEL}...`);
                     const fallback = await callGemini(FALLBACK_MODEL, userPrompt);
