@@ -59,9 +59,15 @@ Verifica siempre los nombres exactos de los componentes (custom_name con array d
 Siempre antes de responder busca la sintaxis del comando y aunque a veces pienses que te la sabes revisala, te sueles equivocar agregandole cosas de otras versiones.
 Para agregar encantamientos es asi: enchantments={sharpness:5,unbreaking:3} para la 26.2, no es {levels: eh.
 
+REGLAS SOBRE LA ESTRUCTURA OBLIGATORIA, NAMESPACES Y PACK FORMAT:
+- Todo datapack requiere obligatoriamente:
+  1. El archivo \`pack.mcmeta\` en la raíz con su respectivo \`pack_format\` adaptado a la versión de Minecraft (consulta siempre la wiki oficial de Minecraft para obtener el número exacto de formato de paquete correspondiente a la versión).
+  2. La carpeta principal \`data/\`.
+- El namespace (por ejemplo, \`vdf\`) NO es obligatorio; el usuario puede utilizar el namespace que quiera o prefiera para su proyecto.
+
 REGLA CLAVE PARA SISTEMAS DE TIENDA Y MENÚS CON /dialog:
 - Cuando el usuario te pida un sistema de tienda o menú interactivo utilizando el comando /dialog, debes tomar la estructura base del datapack actual, crear una copia lógica y modificarla por completo adaptándola a lo que pida el usuario.
-- El menú visual se configura en \`shop.json\` (dentro de la ruta de diálogos), cuyos botones interactúan mediante triggers que llaman directamente a los archivos de funciones individuales ubicados en la carpeta de funciones del datapack.
+- El menú visual se configura en \`shop.json\` (dentro de la ruta de diálogos del namespace elegido), cuyos botones interactúan mediante triggers que llaman directamente a los archivos de funciones individuales ubicados en la carpeta de funciones del datapack.
 - Si el usuario pide una tienda: cada función de compra procesa la validación del dinero del usuario mediante scoreboards (como \`dinero\`), ejecuta el descuento del saldo y entrega el objeto correspondiente con \`@s\` o \`@p\`.
 - Si el usuario pide un menú simple (en vez de una tienda): funciona exactamente igual a nivel estructural (con /dialog, triggers y funciones), pero SIN dinero, es decir, sin validaciones de scoreboards ni cobros, ejecutando directamente la acción solicitada por el usuario.
 - Para cambiar opciones, precios o modificar elementos, indica qué ajustar tanto en el archivo de diálogo como en los archivos de funciones correspondientes.

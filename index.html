@@ -99,7 +99,55 @@
             color: #dcdcdc;
         }
 
-        .loading { color: #888; font-style: italic; }
+        .loading-action { color: #888; font-style: italic; display: flex; align-items: center; gap: 8px; }
+        
+        /* Estilo tarjeta de descarga datapack (tipo la imagen facilitada, pero con tema negro) */
+        .datapack-card {
+            background-color: #1e1e1e;
+            border: 1px solid #333;
+            border-radius: 12px;
+            padding: 10px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 14px;
+            max-width: 380px;
+        }
+        .datapack-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .datapack-icon-box {
+            background-color: #2a2a2a;
+            border: 1px solid #3a3a3a;
+            border-radius: 8px;
+            padding: 8px 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #9cdcfe;
+        }
+        .datapack-filename {
+            font-size: 14px;
+            color: #ececec;
+            font-weight: 500;
+        }
+        .datapack-download-btn {
+            background: transparent;
+            border: 1px solid #444;
+            color: #ececec;
+            padding: 6px 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+        }
+        .datapack-download-btn:hover {
+            background-color: #333;
+            border-color: #555;
+        }
+
         #input-container { padding: 20px; background-color: #212121; }
         .input-box {
             max-width: 800px;
@@ -169,20 +217,6 @@
             justify-content: center;
         }
         button.send-btn:hover { background-color: #8e8e8e; }
-        .download-zip-btn {
-            background-color: #2b5c3f;
-            color: white;
-            border: none;
-            padding: 6px 12px;
-            border-radius: 12px;
-            cursor: pointer;
-            font-size: 13px;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            margin-top: 10px;
-        }
-        .download-zip-btn:hover { background-color: #367c53; }
     </style>
 </head>
 <body>
@@ -219,6 +253,14 @@
         let chatHistory = [];
         let attachedFileText = null;
         let attachedFileName = "";
+
+        const geminiThoughts = [
+            "Analizando la estructura del datapack...",
+            "Consultando la documentación oficial y la Wiki...",
+            "Verificando la sintaxis y los componentes...",
+            "Adaptando comandos para la versión seleccionada...",
+            "Estructurando la respuesta final..."
+        ];
 
         function handleFileSelect(event) {
             const file = event.target.files[0];
@@ -323,8 +365,24 @@
             });
 
             const loadingId = 'loading-' + Date.now();
-            chat.innerHTML += `<div class="message assistant" id="${loadingId}"><div class="bubble loading">Pensando (${modelSelect.value} | ${versionSelect.value})...</div></div>`;
+            let thoughtIndex = 0;
+            
+            chat.innerHTML += `
+                <div class="message assistant" id="${loadingId}">
+                    <div class="bubble loading-action">
+                        <span id="${loadingId}-text">${geminiThoughts[0]}</span>
+                    </div>
+                </div>
+            `;
             chat.scrollTop = chat.scrollHeight;
+
+            const thoughtInterval = setInterval(() => {
+                thoughtIndex = (thoughtIndex + 1) % geminiThoughts.length;
+                const textSpan = document.getElementById(`${loadingId}-text`);
+                if (textSpan) {
+                    textSpan.textContent = geminiThoughts[thoughtIndex];
+                }
+            }, 1800);
 
             try {
                 const res = await fetch('/api/chat', {
@@ -339,6 +397,7 @@
                 
                 const data = await res.json();
                 
+                clearInterval(thoughtInterval);
                 document.getElementById(loadingId).remove();
                 
                 const responseFiles = extractFilesFromResponse(data.respuesta);
@@ -349,7 +408,17 @@
                 if (Object.keys(responseFiles).length > 0) {
                     const uniqueBtnId = 'download-btn-' + Date.now();
                     window[uniqueBtnId] = responseFiles;
-                    messageHtml += `<br><button class="download-zip-btn" onclick="downloadDatapackZip(window['${uniqueBtnId}'])">📦 Descargar Datapack Modificado (.zip)</button>`;
+                    messageHtml += `
+                        <div class="datapack-card">
+                            <div class="datapack-info">
+                                <div class="datapack-icon-box">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+                                </div>
+                                <span class="datapack-filename">datapack_modificado.zip</span>
+                            </div>
+                            <button class="datapack-download-btn" onclick="downloadDatapackZip(window['${uniqueBtnId}'])">Descargar</button>
+                        </div>
+                    `;
                 }
 
                 messageHtml += `</div></div>`;
@@ -361,6 +430,7 @@
                 });
 
             } catch(e) {
+                clearInterval(thoughtInterval);
                 document.getElementById(loadingId).remove();
                 chat.innerHTML += `<div class="message assistant"><div class="bubble" style="color: #ff6b6b;">Error de conexión con el servidor.</div></div>`;
             }
