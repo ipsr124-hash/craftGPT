@@ -48,8 +48,18 @@ const server = http.createServer(async (req, res) => {
                 });
 
                 const result = await response.json();
+
+                // Si la API de Gemini devuelve un error, lo mostramos en el chat
+                if (!response.ok) {
+                    console.error("Error de Gemini:", result);
+                    const errorMsg = result.error?.message || JSON.stringify(result);
+                    res.writeHead(200, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ respuesta: "Error de la API de Gemini: " + errorMsg }));
+                    return;
+                }
+
                 let replyText = "Sin respuesta del modelo.";
-                if (result.candidates && result.candidates[0].content.parts[0].text) {
+                if (result.candidates && result.candidates[0]?.content?.parts?.[0]?.text) {
                     replyText = result.candidates[0].content.parts[0].text;
                 }
 
@@ -57,7 +67,7 @@ const server = http.createServer(async (req, res) => {
                 res.end(JSON.stringify({ respuesta: replyText }));
             } catch (err) {
                 res.writeHead(500, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify({ respuesta: "Error interno: " + err.message }));
+                res.end(JSON.stringify({ respuesta: "Error interno en el servidor: " + err.message }));
             }
         });
         return;
