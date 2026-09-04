@@ -177,31 +177,81 @@
             gap: 8px;
             position: relative;
         }
-        select, .custom-btn {
+        
+        /* Estilos de botones personalizados */
+        .custom-btn {
             background-color: #383838;
             color: #ececec;
-            border: none;
-            padding: 6px 12px;
-            border-radius: 16px;
+            border: 1px solid #4f4f4f;
+            padding: 6px 14px;
+            border-radius: 18px;
             outline: none;
             cursor: pointer;
-            font-size: 14px;
-            font-weight: bold;
+            font-size: 13px;
+            font-weight: 500;
             font-family: inherit;
             display: flex;
             align-items: center;
             justify-content: center;
+            gap: 6px;
+            white-space: nowrap;
         }
-        select:hover, .custom-btn:hover { background-color: #444; }
-        .delete-btn { background-color: #4a2b2b; color: #ff8585; }
-        .delete-btn:hover { background-color: #5e3535; }
+        .custom-btn:hover { background-color: #444; border-color: #666; }
+
+        /* Componente de Dropdown Customizado */
+        .custom-dropdown {
+            position: relative;
+            display: inline-block;
+        }
+        .dropdown-menu {
+            display: none;
+            position: absolute;
+            bottom: calc(100% + 8px);
+            left: 0;
+            background-color: #2a2a2a;
+            border: 1px solid #4f4f4f;
+            border-radius: 16px;
+            box-shadow: 0 6px 16px rgba(0,0,0,0.5);
+            z-index: 100;
+            min-width: 200px;
+            overflow: hidden;
+            padding: 6px 0;
+        }
+        .dropdown-menu.show { display: block; }
+        .dropdown-group-title {
+            padding: 8px 14px 4px 14px;
+            font-size: 11px;
+            font-weight: bold;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .dropdown-item {
+            padding: 8px 14px;
+            font-size: 13px;
+            color: #ececec;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        .dropdown-item:hover { background-color: #383838; color: #fff; }
+
+        /* Botón de borrar chat en gris */
+        .delete-btn {
+            background-color: #333;
+            color: #b0b0b0;
+            border-color: #444;
+        }
+        .delete-btn:hover {
+            background-color: #444;
+            color: #fff;
+        }
         
         textarea {
             flex: 1;
             background: transparent;
             border: none;
             color: #fff;
-            font-size: 16px;
+            font-size: 15px;
             outline: none;
             resize: none;
             max-height: 150px;
@@ -237,14 +287,38 @@
             justify-content: center;
         }
         button.send-btn:hover { background-color: #8e8e8e; }
+
+        /* Adaptación para móviles */
+        @media (max-width: 768px) {
+            #header { padding: 10px 16px; font-size: 16px; }
+            #input-container { padding: 10px; }
+            .input-box {
+                flex-wrap: wrap;
+                border-radius: 16px;
+                padding: 8px 10px;
+                gap: 6px;
+            }
+            .custom-btn {
+                font-size: 12px;
+                padding: 5px 10px;
+            }
+            textarea {
+                width: 100%;
+                order: 10;
+                padding: 4px 2px;
+            }
+            .send-btn {
+                order: 11;
+                margin-left: auto;
+            }
+        }
     </style>
 </head>
 <body>
     <div id="header">
         <span>CraftGPT</span>
         <div class="header-actions">
-            <!-- Botón de papelera para limpiar el chat -->
-            <button class="custom-btn delete-btn" onclick="clearChat()" title="Borrar toda la conversación">🗑️ Limpiar Chat</button>
+            <button class="custom-btn delete-btn" onclick="clearChat()" title="Borrar toda la conversación">Limpiar Chat</button>
         </div>
     </div>
     
@@ -253,23 +327,38 @@
     <div id="input-container">
         <div class="input-box">
             <div id="file-indicator"></div>
-            <select id="model-select" title="Seleccionar modelo">
-                <optgroup label="Gemini (Nube)">
-                    <option value="gemini-3.6-flash">Flash 3.6</option>
-                    <option value="gemini-3.5-flash-lite">Flash 3.5 Lite</option>
-                </optgroup>
-                <optgroup label="OpenRouter Modules">
-                    <option value="cohere/north-mini-code:free">Cohere North Mini Code (Código)</option>
-                    <option value="nvidia/nemotron-3-ultra-550b-a55b:free">Nvidia Nemotron Ultra (Lógica / Complejo)</option>
-                </optgroup>
-            </select>
-            <select id="version-select" title="Versión de Minecraft">
-                <option value="26.2">MC 26.2</option>
-                <option value="1.21.x">MC 1.21+</option>
-                <option value="1.20.x">MC 1.20</option>
-                <option value="1.19.x">MC 1.19</option>
-                <option value="1.18.x">MC 1.18</option>
-            </select>
+
+            <!-- Dropdown Customizado de Modelos -->
+            <div class="custom-dropdown" id="model-dropdown">
+                <button type="button" class="custom-btn" onclick="toggleDropdown('model-menu', event)">
+                    <span id="model-selected-text">Flash 3.6</span>
+                    <span style="font-size: 10px; opacity: 0.7;">▼</span>
+                </button>
+                <div class="dropdown-menu" id="model-menu">
+                    <div class="dropdown-group-title">Gemini</div>
+                    <div class="dropdown-item" onclick="selectModel('gemini-3.6-flash', 'Flash 3.6')">Flash 3.6</div>
+                    <div class="dropdown-item" onclick="selectModel('gemini-3.5-flash-lite', 'Flash 3.5 Lite')">Flash 3.5 Lite</div>
+                    <div class="dropdown-group-title">OpenRouter</div>
+                    <div class="dropdown-item" onclick="selectModel('cohere/north-mini-code:free', 'North Mini Code')">North Mini Code</div>
+                    <div class="dropdown-item" onclick="selectModel('nvidia/nemotron-3-ultra-550b-a55b:free', 'Nemotron Ultra')">Nemotron Ultra</div>
+                </div>
+            </div>
+
+            <!-- Dropdown Customizado de Versiones -->
+            <div class="custom-dropdown" id="version-dropdown">
+                <button type="button" class="custom-btn" onclick="toggleDropdown('version-menu', event)">
+                    <span id="version-selected-text">MC 26.2</span>
+                    <span style="font-size: 10px; opacity: 0.7;">▼</span>
+                </button>
+                <div class="dropdown-menu" id="version-menu">
+                    <div class="dropdown-item" onclick="selectVersion('26.2', 'MC 26.2')">MC 26.2</div>
+                    <div class="dropdown-item" onclick="selectVersion('1.21.x', 'MC 1.21+')">MC 1.21+</div>
+                    <div class="dropdown-item" onclick="selectVersion('1.20.x', 'MC 1.20')">MC 1.20</div>
+                    <div class="dropdown-item" onclick="selectVersion('1.19.x', 'MC 1.19')">MC 1.19</div>
+                    <div class="dropdown-item" onclick="selectVersion('1.18.x', 'MC 1.18')">MC 1.18</div>
+                </div>
+            </div>
+
             <label class="custom-btn" title="Adjuntar archivo (.mcfunction, .json, .txt)">
                 +
                 <input type="file" id="file-input" style="display: none;" onchange="handleFileSelect(event)">
@@ -283,6 +372,10 @@
         let chatHistory = [];
         let attachedFileText = null;
         let attachedFileName = "";
+        
+        // Valores seleccionados actuales
+        let currentModel = 'gemini-3.6-flash';
+        let currentVersion = '26.2';
 
         const geminiThoughts = [
             "Analizando la estructura...",
@@ -290,6 +383,35 @@
             "Generando código...",
             "Finalizando..."
         ];
+
+        // --- SISTEMA DE DROPDOWNS CUSTOM ---
+        function toggleDropdown(menuId, event) {
+            event.stopPropagation();
+            const menu = document.getElementById(menuId);
+            // Cerrar otros menús abiertos
+            document.querySelectorAll('.dropdown-menu').forEach(m => {
+                if (m.id !== menuId) m.classList.remove('show');
+            });
+            menu.classList.toggle('show');
+        }
+
+        function selectModel(value, label) {
+            currentModel = value;
+            document.getElementById('model-selected-text').textContent = label;
+            document.getElementById('model-menu').classList.remove('show');
+        }
+
+        function selectVersion(value, label) {
+            currentVersion = value;
+            document.getElementById('version-selected-text').textContent = label;
+            document.getElementById('version-menu').classList.remove('show');
+        }
+
+        // Cerrar menús al hacer clic fuera
+        window.addEventListener('click', () => {
+            document.querySelectorAll('.dropdown-menu').forEach(m => m.classList.remove('show'));
+        });
+        // ------------------------------------
 
         // --- SISTEMA DE GUARDADO EN NAVEGADOR (LocalStorage) ---
         window.onload = () => {
@@ -402,8 +524,6 @@
         async function sendMessage() {
             const input = document.getElementById('user-input');
             const chat = document.getElementById('chat-container');
-            const modelSelect = document.getElementById('model-select');
-            const versionSelect = document.getElementById('version-select');
             let text = input.value.trim();
 
             if (!text && !attachedFileText) return;
@@ -454,8 +574,8 @@
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({
                         contents: chatHistory,
-                        model: modelSelect.value,
-                        version: versionSelect.value
+                        model: currentModel,
+                        version: currentVersion
                     })
                 });
                 
@@ -488,10 +608,10 @@
                 messageHtml += `</div></div>`;
                 chat.innerHTML += messageHtml;
 
-                    chatHistory.push({
-                        role: "model",
-                        parts: [{ text: data.respuesta }]
-                    });
+                chatHistory.push({
+                    role: "model",
+                    parts: [{ text: data.respuesta }]
+                });
                 
                 saveChatToLocal();
 
