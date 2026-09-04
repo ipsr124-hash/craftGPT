@@ -4,6 +4,7 @@ const path = require('path');
 
 const PORT = process.env.PORT || 7000;
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
+const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || '';
 const DEFAULT_MODEL = process.env.GEMINI_MODEL || 'gemini-3.6-flash';
 const FALLBACK_MODEL = 'gemini-3.5-flash-lite';
 
@@ -92,6 +93,33 @@ async function callGemini(model, contents) {
     return { response, result };
 }
 
+async function callOpenRouter(model, contents) {
+    // Convertir historial al formato de OpenRouter (messages)
+    const messages = [
+        { role: 'system', content: SYSTEM_PROMPT },
+        ...contents.map(c => ({
+            role: c.role === 'model' ? 'assistant' : c.role,
+            content: c.parts[0].text
+        }))
+    ];
+
+    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+            'HTTP-Referer': 'https://craftgpt.onrender.com',
+            'X-Title': 'CraftGPT',
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            model: model,
+            messages: messages
+        })
+    });
+    const result = await response.json();
+    return { response, result };
+}
+
 const server = http.createServer(async (req, res) => {
     if (req.url === '/ping' && req.method === 'GET') {
         res.writeHead(200, { 'Content-Type': 'text/plain' });
@@ -109,12 +137,6 @@ const server = http.createServer(async (req, res) => {
                 const selectedModel = data.model || DEFAULT_MODEL;
                 const mcVersion = data.version || '26.2';
 
-                if (!GEMINI_API_KEY) {
-                    res.writeHead(500, { 'Content-Type': 'application/json' });
-                    res.end(JSON.stringify({ respuesta: "Error: Falta configurar la variable GEMINI_API_KEY en Render." }));
-                    return;
-                }
-
                 if (contents.length > 0) {
                     contents = contents.map((msg, index) => {
                         if (index === contents.length - 1 && msg.role === 'user') {
@@ -127,28 +149,61 @@ const server = http.createServer(async (req, res) => {
                     });
                 }
 
-                let { response, result } = await callGemini(selectedModel, contents);
+                const isOpenRouter = selectedModel.includes('/') || selectedModel.includes(':free');
+                let response, result;
 
-                if (!response.ok && selectedModel !== FALLBACK_MODEL) {
-                    const fallback = await callGemini(FALLBACK_MODEL, contents);
-                    response = fallback.response;
-                    result = fallback.result;
-                }
+                if (isOpenRouter) {
+                    if (!OPENROUTER_API_KEY) {
+                        res.writeHead(500, { 'Content-Type': 'application/json' });
+                        res.end(JSON.stringify({ respuesta: "Error: Falta configurar la variable OPENROUTER_API_KEY en Render." }));
+                        return;
+                    }
+                    const openRouterRes = await callOpenRouter(selectedModel, contents);
+                    response = openRouterRes.response;
+                    result = openRouterRes.result;
 
-                if (!response.ok) {
-                    const errorMsg = result.error?.message || JSON.stringify(result);
+                    let replyText = "Sin respuesta del modelo.";
+                    if (result.choices && result.choices[0]?.message?.content) {
+                        replyText = result.choices[0].message.content;
+                    } else if (result.error) {
+                        replyText = `Error de OpenRouter: ${result.error.message || JSON.stringify(result.error)}`;
+                    }
+
                     res.writeHead(200, { 'Content-Type': 'application/json' });
-                    res.end(JSON.stringify({ respuesta: `Error de la API: ${errorMsg}` }));
+                    res.end(JSON.stringify({ respuesta: replyText }));
                     return;
-                }
+                } else {
+                    if (!GEMINI_API_KEY) {
+                        res.writeHead(500, { 'Content-Type': 'application/json' });
+                        res.end(JSON.stringify({ respuesta: "Error: Falta configurar la variable GEMINI_API_KEY en Render." }));
+                        return;
+                    }
 
-                let replyText = "Sin respuesta del modelo.";
-                if (result.candidates && result.candidates[0]?.content?.parts?.[0]?.text) {
-                    replyText = result.candidates[0].content.parts[0].text;
-                }
+                    let geminiRes = await callGemini(selectedModel, contents);
+                    response = geminiRes.response;
+                    result = geminiRes.result;
 
-                res.writeHead(200, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify({ respuesta: replyText }));
+                    if (!response.ok && selectedModel !== FALLBACK_MODEL) {
+                        const fallback = await callGemini(FALLBACK_MODEL, contents);
+                        response = fallback.response;
+                        result = fallback.result;
+                    }
+
+                    if (!response.ok) {
+                        const errorMsg = result.error?.message || JSON.stringify(result);
+                        res.writeHead(200, { 'Content-Type': 'application/json' });
+                        res.end(JSON.stringify({ respuesta: `Error de la API: ${errorMsg}` }));
+                        return;
+                    }
+
+                    let replyText = "Sin respuesta del modelo.";
+                    if (result.candidates && result.candidates[0]?.content?.parts?.[0]?.text) {
+                        replyText = result.candidates[0].content.parts[0].text;
+                    }
+
+                    res.writeHead(200, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ respuesta: replyText }));
+                }
             } catch (err) {
                 res.writeHead(500, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ respuesta: "Error interno en el servidor: " + err.message }));

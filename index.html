@@ -254,8 +254,14 @@
         <div class="input-box">
             <div id="file-indicator"></div>
             <select id="model-select" title="Seleccionar modelo">
-                <option value="gemini-3.6-flash">Flash 3.6</option>
-                <option value="gemini-3.5-flash-lite">Flash 3.5 Lite</option>
+                <optgroup label="Gemini (Nube)">
+                    <option value="gemini-3.6-flash">Flash 3.6</option>
+                    <option value="gemini-3.5-flash-lite">Flash 3.5 Lite</option>
+                </optgroup>
+                <optgroup label="OpenRouter Modules">
+                    <option value="cohere/north-mini-code:free">Cohere North Mini Code (Código)</option>
+                    <option value="nvidia/nemotron-3-ultra-550b-a55b:free">Nvidia Nemotron Ultra (Lógica / Complejo)</option>
+                </optgroup>
             </select>
             <select id="version-select" title="Versión de Minecraft">
                 <option value="26.2">MC 26.2</option>
@@ -420,7 +426,7 @@
                 parts: [{ text: messageToSend }]
             });
             
-            saveChatToLocal(); // Guardar después del usuario
+            saveChatToLocal();
 
             const loadingId = 'loading-' + Date.now();
             let thoughtIndex = 0;
@@ -482,12 +488,12 @@
                 messageHtml += `</div></div>`;
                 chat.innerHTML += messageHtml;
 
-                chatHistory.push({
-                    role: "model",
-                    parts: [{ text: data.respuesta }]
-                });
+                    chatHistory.push({
+                        role: "model",
+                        parts: [{ text: data.respuesta }]
+                    });
                 
-                saveChatToLocal(); // Guardar después de recibir respuesta
+                saveChatToLocal();
 
             } catch(e) {
                 clearInterval(thoughtInterval);
@@ -497,7 +503,6 @@
             chat.scrollTop = chat.scrollHeight;
         }
 
-        // Permitir enviar con la tecla Enter (sin shift)
         document.getElementById("user-input").addEventListener("keydown", function(event) {
             if (event.key === "Enter" && !event.shiftKey) {
                 event.preventDefault();
