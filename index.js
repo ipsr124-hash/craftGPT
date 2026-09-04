@@ -40,10 +40,12 @@ Tu objetivo es ayudar al usuario a crear:
 1. Comandos avanzados.
 2. Estructuras de Datapacks.
 3. Código Java para Plugins de Paper y Spigot.
+4. Texture Packs avanzados
 Proporciona respuestas claras, código limpio y explicaciones breves.
 Lee sobre estas fuentes y basa tus respuestas en ellas:
 - Documentación oficial de Minecraft: https://minecraft.fandom.com/wiki/Minecraft_Wiki
 - Documentación de Datapacks: https://minecraft.fandom.com/wiki/Data_Pack
+- Puedes encontrar un Template de un datapack en la carpeta 'datapack' de este proyecto, en el README se explica todo.
 - Documentación de Paper: https://papermc.io/
 - Documentación de Spigot: https://www.spigotmc.org/
 También que sepas que la actual versión es la 26.2, asi que siempre lee la wiki oficial para ver si hay cambios. No inventes información, si no sabes algo, dilo claramente.
@@ -63,14 +65,7 @@ REGLAS SOBRE LA ESTRUCTURA OBLIGATORIA, NAMESPACES Y PACK FORMAT:
 - Todo datapack requiere obligatoriamente:
   1. El archivo \`pack.mcmeta\` en la raíz con su respectivo \`pack_format\` adaptado a la versión de Minecraft (consulta siempre la wiki oficial de Minecraft para obtener el número exacto de formato de paquete correspondiente a la versión).
   2. La carpeta principal \`data/\`.
-- El namespace (por ejemplo, \`vdf\`) NO es obligatorio; el usuario puede utilizar el namespace que quiera o prefiera para su proyecto.
-
-REGLA CLAVE PARA SISTEMAS DE TIENDA Y MENÚS CON /dialog:
-- Cuando el usuario te pida un sistema de tienda o menú interactivo utilizando el comando /dialog, debes tomar la estructura base del datapack actual, crear una copia lógica y modificarla por completo adaptándola a lo que pida el usuario.
-- El menú visual se configura en \`shop.json\` (dentro de la ruta de diálogos del namespace elegido), cuyos botones interactúan mediante triggers que llaman directamente a los archivos de funciones individuales ubicados en la carpeta de funciones del datapack.
-- Si el usuario pide una tienda: cada función de compra procesa la validación del dinero del usuario mediante scoreboards (como \`dinero\`), ejecuta el descuento del saldo y entrega el objeto correspondiente con \`@s\` o \`@p\`.
-- Si el usuario pide un menú simple (en vez de una tienda): funciona exactamente igual a nivel estructural (con /dialog, triggers y funciones), pero SIN dinero, es decir, sin validaciones de scoreboards ni cobros, ejecutando directamente la acción solicitada por el usuario.
-- Para cambiar opciones, precios o modificar elementos, indica qué ajustar tanto en el archivo de diálogo como en los archivos de funciones correspondientes.
+- El namespace (por ejemplo, \`gpt\`) NO es obligatorio; el usuario puede utilizar el namespace que quiera o prefiera para su proyecto.
 
 FORMATO DE ARCHIVOS PARA DESCARGA:
 - Cuando modifiques o crees archivos del datapack, indícalo obligatoriamente con el formato \`=== ARCHIVO: ruta/archivo.extension ===\` seguido del bloque de código correspondiente para que la interfaz pueda empaquetarlos y ofrecerlos en un botón de descarga automática.
@@ -112,7 +107,7 @@ const server = http.createServer(async (req, res) => {
                 const data = JSON.parse(body);
                 let contents = data.contents || [];
                 const selectedModel = data.model || DEFAULT_MODEL;
-                const mcVersion = data.version || '1.21.x';
+                const mcVersion = data.version || '26.2';
 
                 if (!GEMINI_API_KEY) {
                     res.writeHead(500, { 'Content-Type': 'application/json' });

@@ -25,7 +25,9 @@
             border-bottom: 1px solid #2f2f2f;
             display: flex;
             align-items: center;
+            justify-content: space-between;
         }
+        .header-actions { display: flex; gap: 10px; }
         #chat-container {
             flex: 1;
             overflow-y: auto;
@@ -64,7 +66,7 @@
         .assistant .bubble p { margin-bottom: 10px; }
         .assistant .bubble ul, .assistant .bubble ol { margin-left: 20px; margin-bottom: 10px; }
         
-        /* Estilo para reemplazar "=== ARCHIVO: ruta ===" por una etiqueta minimalista */
+        /* Pestaña de archivo minimalista */
         .minimal-file-path {
             display: inline-flex;
             align-items: center;
@@ -83,7 +85,7 @@
             z-index: 1;
         }
 
-        /* Bloque de código adaptado como Gemini */
+        /* Código sin scroll horizontal */
         .code-block-wrapper {
             background-color: #1e1e1e;
             border: 1px solid #333;
@@ -120,7 +122,6 @@
             font-size: 13px;
             color: #dcdcdc;
             margin: 0;
-            /* SE QUITA LA BARRA HORIZONTAL (Ajuste de líneas) */
             white-space: pre-wrap;
             word-wrap: break-word;
             overflow-x: hidden;
@@ -128,7 +129,7 @@
 
         .loading-action { color: #888; font-style: italic; display: flex; align-items: center; gap: 8px; }
         
-        /* Tarjeta de descarga de Datapack */
+        /* Botón descargar Datapack */
         .datapack-card {
             background-color: #1e1e1e;
             border: 1px solid #333;
@@ -176,7 +177,7 @@
             gap: 8px;
             position: relative;
         }
-        select, .custom-plus-btn {
+        select, .custom-btn {
             background-color: #383838;
             color: #ececec;
             border: none;
@@ -191,7 +192,10 @@
             align-items: center;
             justify-content: center;
         }
-        select:hover, .custom-plus-btn:hover { background-color: #444; }
+        select:hover, .custom-btn:hover { background-color: #444; }
+        .delete-btn { background-color: #4a2b2b; color: #ff8585; }
+        .delete-btn:hover { background-color: #5e3535; }
+        
         textarea {
             flex: 1;
             background: transparent;
@@ -238,6 +242,10 @@
 <body>
     <div id="header">
         <span>CraftGPT</span>
+        <div class="header-actions">
+            <!-- Botón de papelera para limpiar el chat -->
+            <button class="custom-btn delete-btn" onclick="clearChat()" title="Borrar toda la conversación">🗑️ Limpiar Chat</button>
+        </div>
     </div>
     
     <div id="chat-container"></div>
@@ -247,16 +255,16 @@
             <div id="file-indicator"></div>
             <select id="model-select" title="Seleccionar modelo">
                 <option value="gemini-3.6-flash">Flash 3.6</option>
-                <option value="gemini-3.5-flash-lite">Flash-Lite</option>
-                <option value="gemini-1.5-flash">Flash 1.5</option>
+                <option value="gemini-3.5-flash-lite">Flash 3.5 Lite</option>
             </select>
             <select id="version-select" title="Versión de Minecraft">
+                <option value="26.2">MC 26.2</option>
                 <option value="1.21.x">MC 1.21+</option>
                 <option value="1.20.x">MC 1.20</option>
                 <option value="1.19.x">MC 1.19</option>
                 <option value="1.18.x">MC 1.18</option>
             </select>
-            <label class="custom-plus-btn" title="Adjuntar archivo (.mcfunction, .json, .txt)">
+            <label class="custom-btn" title="Adjuntar archivo (.mcfunction, .json, .txt)">
                 +
                 <input type="file" id="file-input" style="display: none;" onchange="handleFileSelect(event)">
             </label>
@@ -277,6 +285,35 @@
             "Finalizando..."
         ];
 
+        // --- SISTEMA DE GUARDADO EN NAVEGADOR (LocalStorage) ---
+        window.onload = () => {
+            const savedChat = localStorage.getItem('craftgpt_chat_html');
+            const savedHistory = localStorage.getItem('craftgpt_chat_history');
+            
+            if (savedChat && savedHistory) {
+                document.getElementById('chat-container').innerHTML = savedChat;
+                chatHistory = JSON.parse(savedHistory);
+                const chat = document.getElementById('chat-container');
+                chat.scrollTop = chat.scrollHeight;
+            }
+        };
+
+        function saveChatToLocal() {
+            const chatContainer = document.getElementById('chat-container').innerHTML;
+            localStorage.setItem('craftgpt_chat_html', chatContainer);
+            localStorage.setItem('craftgpt_chat_history', JSON.stringify(chatHistory));
+        }
+
+        function clearChat() {
+            if (confirm("¿Estás seguro de que quieres borrar TODA la conversación? Esto no se puede deshacer.")) {
+                localStorage.removeItem('craftgpt_chat_html');
+                localStorage.removeItem('craftgpt_chat_history');
+                document.getElementById('chat-container').innerHTML = '';
+                chatHistory = [];
+            }
+        }
+        // --------------------------------------------------------
+
         function handleFileSelect(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -293,14 +330,12 @@
         }
 
         function formatMarkdown(text) {
-            // Convierte el texto "=== ARCHIVO: ruta ===" en una pestaña minimalista flotante arriba del código
             let processedText = text.replace(/===\s*ARCHIVO:\s*([^\s=]+)\s*===/g, 
                 '\n<div class="minimal-file-path"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="13 2 13 9 20 9"></polyline></svg> $1</div>\n'
             );
 
             let html = marked.parse(processedText);
             
-            // Procesa los bloques de código y aplica 'white-space: pre-wrap' para eliminar el scroll horizontal
             html = html.replace(/<pre><code(?:\s+class="([^"]*)")?>([\s\S]*?)<\/code><\/pre>/g, (match, langClass, codeContent) => {
                 const lang = langClass ? langClass.replace('language-', '') : 'código';
                 const uniqueId = 'code-' + Math.random().toString(36).substr(2, 9);
@@ -384,6 +419,8 @@
                 role: "user",
                 parts: [{ text: messageToSend }]
             });
+            
+            saveChatToLocal(); // Guardar después del usuario
 
             const loadingId = 'loading-' + Date.now();
             let thoughtIndex = 0;
@@ -449,6 +486,8 @@
                     role: "model",
                     parts: [{ text: data.respuesta }]
                 });
+                
+                saveChatToLocal(); // Guardar después de recibir respuesta
 
             } catch(e) {
                 clearInterval(thoughtInterval);
@@ -457,6 +496,14 @@
             }
             chat.scrollTop = chat.scrollHeight;
         }
+
+        // Permitir enviar con la tecla Enter (sin shift)
+        document.getElementById("user-input").addEventListener("keydown", function(event) {
+            if (event.key === "Enter" && !event.shiftKey) {
+                event.preventDefault();
+                sendMessage();
+            }
+        });
     </script>
 </body>
 </html>

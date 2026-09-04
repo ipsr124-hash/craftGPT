@@ -36,12 +36,15 @@ Here is a quick look at what goes into each folder so you can keep your project 
   The official 64x64 or 128x128 PNG icon for your data pack, displayed in the game's pack selection menu.
 * **`data/minecraft/tags/function/`**
   Contains `load.json` (runs once when the world/server starts) and `tick.json` (runs constantly, 20 times per second). This is where you trigger your main scripts.
-* **`data/vdf/function/`**
+* **`data/gpt/function/`**
   The main folder for your command files (`.mcfunction`). This is where all your gameplay logic lives.
-* **`data/vdf/predicate/`**
+* **`data/gpt/predicate/`**
   Folder for "predicates" (conditions written in JSON). Use these to quickly check things like "is the player sneaking?" or "is the item right-clicked?". They are much better for server performance than heavy `/execute` commands.
-* **`data/vdf/advancement/`**
+* **`data/gpt/advancement/`**
   Advancements used as "triggers". They let you instantly detect player actions (like eating an item, attacking, or taking damage) right when they happen, without putting a constant load on the server.
+* **`data/gpt/dialog/`**
+  Dialog is a command that can create interfaces and menus. By default, it's set up as a shop where the money is a scoreboard, and clicking a button executes a trigger, a function. Functions in data/minecraft/tags/function that are named after an item mean what is executed when you click a buy button (check if you have money, give the item, take money, reset, etc.).
+
 
 ---
 
