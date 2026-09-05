@@ -4,9 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CraftGPT</title>
-    <!-- Icono de la pestaña (Favicon) usando el SVG directamente -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpolygon points='50,10 90,30 50,50 10,30' fill='%236DA243' /%3E%3Cpolygon points='50,50 90,30 90,75 50,95' fill='%23754C2B' /%3E%3Cpolygon points='10,30 50,50 50,95 10,75' fill='%23875833' /%3E%3Cpolygon points='10,30 50,50 50,58 35,50 35,55 20,47 20,40 10,35' fill='%23588B31' /%3E%3Cpolygon points='50,50 90,30 90,35 80,40 80,47 65,55 65,50 50,58' fill='%234B772A' /%3E%3C/svg%3E">
-    
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <style>
@@ -19,305 +17,136 @@
             height: 100vh;
             overflow: hidden;
         }
-        
-        /* --- SIDEBAR (Oculto por defecto) --- */
         #sidebar {
-            width: 260px;
-            background-color: #171717;
-            border-right: 1px solid #2f2f2f;
-            display: flex;
-            flex-direction: column;
-            position: absolute;
-            height: 100vh;
-            transform: translateX(-100%);
-            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            z-index: 1000;
+            width: 260px; background-color: #171717; border-right: 1px solid #2f2f2f;
+            display: flex; flex-direction: column; position: absolute; height: 100vh;
+            transform: translateX(-100%); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); z-index: 1000;
         }
         #sidebar.open { transform: translateX(0); }
-        
-        .sidebar-header {
-            padding: 20px 16px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            border-bottom: 1px solid #2f2f2f;
-        }
-        
-        .sidebar-title {
-            font-size: 14px;
-            font-weight: 600;
-            color: #888;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .close-sidebar-btn {
-            background: transparent;
-            border: none;
-            color: #888;
-            cursor: pointer;
-            padding: 4px;
-            border-radius: 4px;
-        }
+        .sidebar-header { padding: 20px 16px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #2f2f2f; }
+        .sidebar-title { font-size: 14px; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: 0.5px; }
+        .close-sidebar-btn { background: transparent; border: none; color: #888; cursor: pointer; padding: 4px; border-radius: 4px; }
         .close-sidebar-btn:hover { background-color: #2a2a2a; color: #ececec; }
-
-        .chat-list {
-            flex: 1;
-            overflow-y: auto;
-            padding: 12px;
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-            scrollbar-width: thin;
-            scrollbar-color: #444 transparent;
-        }
+        .chat-list { flex: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 4px; }
         .chat-item {
-            padding: 12px 14px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 14px;
-            color: #b0b0b0;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            transition: background-color 0.1s;
+            padding: 12px 14px; border-radius: 8px; cursor: pointer; font-size: 14px; color: #b0b0b0;
+            display: flex; justify-content: space-between; align-items: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
         }
         .chat-item:hover { background-color: #2a2a2a; color: #ececec; }
         .chat-item.active { background-color: #333; color: #fff; font-weight: 500; }
-        
         .chat-title-text { overflow: hidden; text-overflow: ellipsis; flex: 1; }
-        
-        .delete-chat-btn {
-            background: transparent;
-            border: none;
-            color: #888;
-            cursor: pointer;
-            display: none;
-            padding: 4px;
-            border-radius: 4px;
-        }
+        .delete-chat-btn { background: transparent; border: none; color: #888; cursor: pointer; display: none; padding: 4px; border-radius: 4px; }
         .chat-item:hover .delete-chat-btn { display: block; }
         .delete-chat-btn:hover { color: #ff6b6b; background-color: #444; }
 
-        /* Fondos y Overlays */
-        #overlay {
-            display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.4); z-index: 999; backdrop-filter: blur(2px);
-        }
+        #overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.4); z-index: 999; backdrop-filter: blur(2px); }
         #overlay.show { display: block; }
 
-        /* --- MODAL DE CONFIRMACIÓN MINIMALISTA --- */
-        #custom-confirm-overlay {
-            display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0, 0, 0, 0.6); z-index: 2000; align-items: center; justify-content: center;
-            backdrop-filter: blur(4px);
-        }
-        .custom-confirm-box {
-            background-color: #212121; border: 1px solid #3a3a3a; border-radius: 16px;
-            padding: 24px; width: 320px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-        }
-        #custom-confirm-message { margin-bottom: 24px; font-size: 15px; color: #ececec; font-weight: 500; }
-        .custom-confirm-actions { display: flex; gap: 12px; justify-content: center; }
-        .modal-btn {
-            padding: 8px 16px; border-radius: 12px; font-size: 13px; font-weight: 500;
-            cursor: pointer; border: 1px solid transparent; transition: all 0.2s; outline: none; font-family: inherit;
-        }
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.6); z-index: 2000; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
+        .modal-box { background-color: #212121; border: 1px solid #3a3a3a; border-radius: 16px; padding: 24px; width: 360px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .modal-title { margin-bottom: 16px; font-size: 18px; color: #ececec; font-weight: 600; text-align: left; }
+        .modal-message { margin-bottom: 24px; font-size: 14px; color: #aaa; text-align: left; line-height: 1.5; }
+        .modal-input { width: 100%; background-color: #2a2a2a; border: 1px solid #3a3a3a; border-radius: 10px; padding: 10px 14px; color: #fff; font-size: 14px; outline: none; margin-bottom: 12px; font-family: inherit; }
+        .modal-input:focus { border-color: #666; }
+        .modal-btn { padding: 9px 16px; border-radius: 10px; font-size: 13px; font-weight: 500; cursor: pointer; border: 1px solid transparent; outline: none; font-family: inherit; }
         .cancel-btn { background-color: #383838; color: #ececec; border-color: #4f4f4f; }
-        .cancel-btn:hover { background-color: #444; }
         .danger-btn { background-color: #b73a3a; color: #fff; }
-        .danger-btn:hover { background-color: #d34040; }
+        .primary-modal-btn { background-color: #ececec; color: #212121; width: 100%; }
+        .google-auth-btn { width: 100%; background-color: #2a2a2a; border: 1px solid #3a3a3a; color: #ececec; padding: 10px; border-radius: 10px; font-size: 14px; font-weight: 500; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 12px; }
+        .auth-divider { display: flex; align-items: center; text-align: center; color: #777; font-size: 12px; margin: 16px 0; }
+        .auth-divider::before, .auth-divider::after { content: ''; flex: 1; border-bottom: 1px solid #333; }
+        .auth-divider:not(:empty)::before { margin-right: .75em; }
+        .auth-divider:not(:empty)::after { margin-left: .75em; }
 
-        /* --- CONTENIDO PRINCIPAL --- */
         #main-wrapper { flex: 1; display: flex; flex-direction: column; min-width: 0; position: relative; }
-        
-        /* CABECERA MINIMALISTA */
-        #header {
-            padding: 12px 24px; background-color: transparent; display: flex;
-            align-items: center; justify-content: space-between; position: absolute;
-            top: 0; left: 0; right: 0; z-index: 10;
-        }
-        
+        #header { padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; position: absolute; top: 0; left: 0; right: 0; z-index: 10; }
         .header-left { display: flex; align-items: center; gap: 12px; }
-
-        /* Logo de Bloque (Botón Menú) */
-        .logo-menu-btn {
-            background: transparent; border: none; cursor: pointer; padding: 6px;
-            border-radius: 8px; display: flex; align-items: center; justify-content: center;
-            transition: background-color 0.2s;
-        }
-        .logo-menu-btn:hover { background-color: #2a2a2a; }
+        .logo-menu-btn { background: transparent; border: none; cursor: pointer; padding: 6px; border-radius: 8px; }
         .logo-menu-btn svg { width: 24px; height: 24px; }
+        .quick-new-chat-btn { background: transparent; border: none; color: #888; cursor: pointer; padding: 6px; border-radius: 8px; }
+        .header-actions { display: flex; align-items: center; gap: 8px; }
+        .icon-btn { background: transparent; border: none; color: #888; cursor: pointer; padding: 8px; border-radius: 8px; }
+        .auth-actions { display: flex; align-items: center; gap: 6px; margin-right: 4px; }
+        .auth-btn { background: transparent; border: 1px solid #3a3a3a; color: #b0b0b0; padding: 5px 12px; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; font-family: inherit; }
+        .auth-btn-primary { background: #ececec; border: 1px solid #ececec; color: #212121; }
+        .user-email-badge { font-size: 12px; color: #9cdcfe; background-color: #2a2a2a; border: 1px solid #3a3a3a; padding: 5px 10px; border-radius: 8px; display: flex; align-items: center; gap: 6px; }
 
-        /* Botón discreto Nuevo Chat */
-        .quick-new-chat-btn {
-            background: transparent; border: none; color: #888; cursor: pointer;
-            padding: 6px; border-radius: 8px; display: flex; align-items: center;
-            justify-content: center; transition: all 0.2s;
-        }
-        .quick-new-chat-btn:hover { background-color: #2a2a2a; color: #ececec; }
-
-        .header-actions { display: flex; gap: 10px; }
-        .icon-btn {
-            background: transparent; border: none; color: #888; cursor: pointer;
-            padding: 8px; border-radius: 8px; transition: all 0.2s;
-        }
-        .icon-btn:hover { background-color: #2a2a2a; color: #ececec; }
-
-
-        #chat-container {
-            flex: 1; overflow-y: auto; padding: 60px 20px 20px 20px;
-            display: flex; flex-direction: column; gap: 24px; max-width: 800px;
-            margin: 0 auto; width: 100%; scrollbar-width: none;
-        }
-        #chat-container::-webkit-scrollbar { display: none; }
-        
+        #chat-container { flex: 1; overflow-y: auto; padding: 60px 20px 20px 20px; display: flex; flex-direction: column; gap: 24px; max-width: 800px; margin: 0 auto; width: 100%; scrollbar-width: none; }
         .message { display: flex; gap: 16px; line-height: 1.6; }
         .user { justify-content: flex-end; }
-        .user .bubble {
-            background-color: #2f2f2f; color: #ececec; padding: 12px 18px;
-            border-radius: 20px; max-width: 80%; white-space: pre-wrap; font-size: 15px;
-        }
+        .user .bubble { background-color: #2f2f2f; color: #ececec; padding: 12px 18px; border-radius: 20px; max-width: 80%; white-space: pre-wrap; font-size: 15px; }
         .assistant { justify-content: flex-start; width: 100%; }
         .assistant .bubble { background-color: transparent; color: #ececec; padding: 4px 0; max-width: 100%; font-size: 15px; }
-        .assistant .bubble h1, .assistant .bubble h2, .assistant .bubble h3 { margin: 16px 0 8px 0; color: #fff; font-weight: 600; }
-        .assistant .bubble p { margin-bottom: 12px; }
-        .assistant .bubble ul, .assistant .bubble ol { margin-left: 20px; margin-bottom: 12px; }
         
-        /* Código y UI de Archivos */
-        .minimal-file-path {
-            display: inline-flex; align-items: center; gap: 6px; background-color: #2a2a2a;
-            color: #9cdcfe; padding: 4px 10px; border-radius: 6px 6px 0 0; font-size: 12px;
-            font-family: Consolas, monospace; border: 1px solid #333; border-bottom: none;
-            margin-top: 14px; margin-bottom: -12px; position: relative; z-index: 1;
-        }
-        .code-block-wrapper {
-            background-color: #1e1e1e; border: 1px solid #333; border-radius: 8px;
-            margin: 12px 0; overflow: hidden; position: relative; z-index: 0;
-        }
-        .code-header {
-            background-color: #2a2a2a; padding: 6px 12px; font-size: 12px; color: #b0b0b0;
-            display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333;
-        }
-        .copy-btn {
-            background: transparent; border: none; color: #b0b0b0; cursor: pointer;
-            font-size: 12px; padding: 2px 6px; border-radius: 4px;
-        }
-        .copy-btn:hover { background-color: #383838; color: #fff; }
-        .code-block-wrapper pre {
-            padding: 16px; font-family: Consolas, Monaco, monospace; font-size: 13px;
-            color: #dcdcdc; margin: 0; white-space: pre-wrap; word-wrap: break-word; overflow-x: hidden;
-        }
-
-        .loading-action { color: #888; font-style: italic; display: flex; align-items: center; gap: 8px; }
+        .minimal-file-path { display: inline-flex; align-items: center; gap: 6px; background-color: #2a2a2a; color: #9cdcfe; padding: 4px 10px; border-radius: 6px 6px 0 0; font-size: 12px; font-family: Consolas, monospace; border: 1px solid #333; border-bottom: none; margin-top: 14px; margin-bottom: -12px; }
+        .code-block-wrapper { background-color: #1e1e1e; border: 1px solid #333; border-radius: 8px; margin: 12px 0; overflow: hidden; }
+        .code-header { background-color: #2a2a2a; padding: 6px 12px; font-size: 12px; color: #b0b0b0; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; }
+        .copy-btn { background: transparent; border: none; color: #b0b0b0; cursor: pointer; font-size: 12px; padding: 2px 6px; border-radius: 4px; }
+        .code-block-wrapper pre { padding: 16px; font-family: Consolas, monospace; font-size: 13px; color: #dcdcdc; margin: 0; white-space: pre-wrap; }
         
-        .datapack-card {
-            background-color: #1e1e1e; border: 1px solid #333; border-radius: 12px;
-            padding: 10px 16px; display: flex; align-items: center; justify-content: space-between;
-            margin-top: 14px; max-width: 380px;
-        }
+        .datapack-card { background-color: #1e1e1e; border: 1px solid #333; border-radius: 12px; padding: 10px 16px; display: flex; align-items: center; justify-content: space-between; margin-top: 14px; max-width: 380px; }
         .datapack-info { display: flex; align-items: center; gap: 12px; }
-        .datapack-icon-box {
-            background-color: #2a2a2a; border: 1px solid #3a3a3a; border-radius: 8px;
-            padding: 8px 10px; display: flex; align-items: center; justify-content: center; color: #9cdcfe;
-        }
+        .datapack-icon-box { background-color: #2a2a2a; border: 1px solid #3a3a3a; border-radius: 8px; padding: 8px 10px; color: #9cdcfe; }
         .datapack-filename { font-size: 14px; color: #ececec; font-weight: 500; }
-        .datapack-download-btn {
-            background: transparent; border: 1px solid #444; color: #ececec; padding: 6px 14px;
-            border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 500;
-        }
-        .datapack-download-btn:hover { background-color: #333; border-color: #555; }
+        .datapack-download-btn { background: transparent; border: 1px solid #444; color: #ececec; padding: 6px 14px; border-radius: 8px; cursor: pointer; font-size: 13px; }
 
-        /* Controles Inferiores */
         #input-container { padding: 20px; background-color: #212121; }
-        .input-box {
-            max-width: 800px; margin: 0 auto; display: flex; background-color: #2f2f2f;
-            border-radius: 24px; padding: 8px 12px; align-items: flex-end; gap: 8px;
-            position: relative; border: 1px solid #444; transition: border-color 0.2s;
-        }
-        .input-box:focus-within { border-color: #666; }
-        
-        .custom-btn {
-            background-color: #383838; color: #ececec; border: 1px solid #4f4f4f; padding: 6px 14px;
-            border-radius: 18px; outline: none; cursor: pointer; font-size: 13px; font-weight: 500;
-            font-family: inherit; display: flex; align-items: center; justify-content: center;
-            gap: 6px; white-space: nowrap; height: 32px; margin-bottom: 2px;
-        }
-        .custom-btn:hover { background-color: #444; border-color: #666; }
-        
-        .attach-btn {
-            background: transparent; border: none; color: #888; cursor: pointer; padding: 8px;
-            border-radius: 50%; display: flex; align-items: center; justify-content: center;
-            transition: all 0.2s; margin-bottom: 2px;
-        }
-        .attach-btn:hover { background-color: #383838; color: #ececec; }
-
-        /* Dropdowns */
-        .custom-dropdown { position: relative; display: inline-block; margin-bottom: 2px;}
-        .dropdown-menu {
-            display: none; position: absolute; bottom: calc(100% + 12px); left: 0;
-            background-color: #2a2a2a; border: 1px solid #4f4f4f; border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.5); z-index: 100; min-width: 180px; overflow: hidden; padding: 6px 0;
-        }
+        .input-box { max-width: 800px; margin: 0 auto; display: flex; background-color: #2f2f2f; border-radius: 24px; padding: 8px 12px; align-items: flex-end; gap: 8px; position: relative; border: 1px solid #444; }
+        .custom-btn { background-color: #383838; color: #ececec; border: 1px solid #4f4f4f; padding: 6px 14px; border-radius: 18px; outline: none; cursor: pointer; font-size: 13px; font-family: inherit; height: 32px; margin-bottom: 2px; }
+        .attach-btn { background: transparent; border: none; color: #888; cursor: pointer; padding: 8px; border-radius: 50%; margin-bottom: 2px; }
+        .custom-dropdown { position: relative; display: inline-block; margin-bottom: 2px; }
+        .dropdown-menu { display: none; position: absolute; bottom: calc(100% + 12px); left: 0; background-color: #2a2a2a; border: 1px solid #4f4f4f; border-radius: 12px; z-index: 100; min-width: 180px; padding: 6px 0; }
         .dropdown-menu.show { display: block; }
-        .dropdown-group-title { padding: 8px 14px 4px 14px; font-size: 11px; font-weight: 600; color: #888; text-transform: uppercase; }
-        .dropdown-item { padding: 8px 14px; font-size: 13px; color: #ececec; cursor: pointer; font-weight: 500; }
-        .dropdown-item:hover { background-color: #383838; color: #fff; }
-
-        textarea {
-            flex: 1; background: transparent; border: none; color: #fff; font-size: 15px; outline: none;
-            resize: none; max-height: 200px; font-family: inherit; padding: 8px 4px; margin: 0;
-            line-height: 1.5; scrollbar-width: none; min-height: 40px;
-        }
-        textarea::-webkit-scrollbar { display: none; }
-        
-        #file-indicator {
-            font-size: 11px; color: #4CAF50; position: absolute; top: -24px; left: 16px;
-            background: #2a2a2a; padding: 4px 10px; border-radius: 6px; border: 1px solid #444;
-            display: none; align-items: center; gap: 6px;
-        }
-        .remove-file-btn { background: transparent; border: none; color: #888; cursor: pointer; font-size: 14px; line-height: 1;}
-        .remove-file-btn:hover { color: #ff6b6b;}
-
-        button.send-btn {
-            background-color: #ececec; border: none; color: #212121; border-radius: 50%;
-            width: 32px; height: 32px; min-width: 32px; cursor: pointer; display: flex;
-            align-items: center; justify-content: center; transition: transform 0.2s, background-color 0.2s;
-            margin-bottom: 4px; margin-right: 2px;
-        }
-        button.send-btn:hover { background-color: #fff; transform: scale(1.05);}
-        button.send-btn:disabled { background-color: #444; color: #888; cursor: not-allowed; transform: none; }
-        button.send-btn svg { width: 16px; height: 16px; }
-
-        /* Adaptación móvil */
-        @media (max-width: 768px) {
-            #sidebar { width: 80%; max-width: 300px; }
-            #header { padding: 12px 16px; }
-            #input-container { padding: 10px; }
-            .input-box { flex-wrap: wrap; border-radius: 16px; padding: 8px; gap: 6px; }
-            .custom-btn { font-size: 12px; padding: 5px 10px; height: 28px;}
-            textarea { width: 100%; order: -1; min-height: 40px; } 
-            .bottom-controls { display: flex; width: 100%; justify-content: space-between; align-items: center; }
-            .left-controls { display: flex; gap: 6px; align-items: center;}
-        }
+        .dropdown-group-title { padding: 8px 14px 4px; font-size: 11px; font-weight: 600; color: #888; text-transform: uppercase; }
+        .dropdown-item { padding: 8px 14px; font-size: 13px; color: #ececec; cursor: pointer; }
+        .dropdown-item:hover { background-color: #383838; }
+        textarea { flex: 1; background: transparent; border: none; color: #fff; font-size: 15px; outline: none; resize: none; max-height: 200px; font-family: inherit; padding: 8px 4px; min-height: 40px; }
+        #file-indicator { font-size: 11px; color: #4CAF50; position: absolute; top: -24px; left: 16px; background: #2a2a2a; padding: 4px 10px; border-radius: 6px; border: 1px solid #444; display: none; align-items: center; gap: 6px; }
+        .remove-file-btn { background: transparent; border: none; color: #888; cursor: pointer; font-size: 14px; }
+        button.send-btn { background-color: #ececec; border: none; color: #212121; border-radius: 50%; width: 32px; height: 32px; min-width: 32px; cursor: pointer; display: flex; align-items: center; justify-content: center; margin-bottom: 4px; }
+        button.send-btn:disabled { background-color: #444; color: #888; cursor: not-allowed; }
     </style>
 </head>
 <body>
-    
-    <!-- Modal Personalizado de Confirmación -->
-    <div id="custom-confirm-overlay">
-        <div class="custom-confirm-box">
-            <div id="custom-confirm-message">¿Estás seguro?</div>
-            <div class="custom-confirm-actions">
+    <div id="custom-confirm-overlay" class="modal-overlay">
+        <div class="modal-box" style="text-align: center;">
+            <div id="custom-confirm-message" class="modal-message" style="margin-bottom: 24px; text-align: center;">¿Estás seguro?</div>
+            <div style="display: flex; gap: 12px; justify-content: center;">
                 <button class="modal-btn cancel-btn" onclick="closeConfirm()">Cancelar</button>
-                <button class="modal-btn danger-btn" id="custom-confirm-yes">Borrar</button>
+                <button class="modal-btn danger-btn" id="custom-confirm-yes">Aceptar</button>
             </div>
         </div>
     </div>
 
-    <!-- Panel Lateral (Oculto) -->
+    <div id="auth-modal-overlay" class="modal-overlay">
+        <div class="modal-box">
+            <div class="modal-title" id="auth-modal-title">Crear cuenta</div>
+            <div id="auth-step-1">
+                <form id="auth-form" onsubmit="handleAuthSubmit(event)">
+                    <div id="username-field-container" style="display: none;">
+                        <input type="text" id="auth-username" placeholder="Nombre de usuario" class="modal-input">
+                    </div>
+                    <input type="email" id="auth-email" placeholder="Correo electrónico" required class="modal-input">
+                    <button type="submit" class="modal-btn primary-modal-btn" id="auth-submit-btn-text">Continuar</button>
+                </form>
+                <div class="auth-divider">o</div>
+                <button type="button" class="google-auth-btn" onclick="handleGoogleLogin()">
+                    <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z"/><path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.2v3.15C3.18 21.3 7.23 24 12 24z"/><path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.2C.44 8.13 0 9.92 0 12s.44 3.87 1.2 5.42l4.08-3.15z"/><path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.23 0 3.18 2.7 1.2 6.58l4.08 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/></svg>
+                    Continuar con Google
+                </button>
+            </div>
+            <div id="auth-step-2" style="display: none;">
+                <div class="modal-message" id="verification-notice">Hemos enviado un código de confirmación a tu correo.</div>
+                <div style="background: #2a2a2a; border: 1px dashed #555; padding: 10px; border-radius: 8px; margin-bottom: 14px; font-family: monospace; font-size: 18px; color: #9cdcfe; letter-spacing: 2px; display: none;" id="mock-code-display"></div>
+                <input type="text" id="verification-code-input" placeholder="Introduce el código de 4 dígitos" maxlength="4" class="modal-input" style="text-align: center; font-size: 18px; letter-spacing: 4px;">
+                <button type="button" class="modal-btn primary-modal-btn" onclick="verifyEmailCode()">Verificar y Registrarse</button>
+            </div>
+            <div style="margin-top: 16px; text-align: right;">
+                <button class="modal-btn cancel-btn" onclick="closeAuthModal()">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
     <div id="overlay" onclick="toggleSidebar()"></div>
     <div id="sidebar">
         <div class="sidebar-header">
@@ -326,17 +155,12 @@
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
             </button>
         </div>
-        <div class="chat-list" id="chat-list">
-            <!-- Lista de chats inyectada por JS -->
-        </div>
+        <div class="chat-list" id="chat-list"></div>
     </div>
     
-    <!-- Contenido Principal -->
     <div id="main-wrapper">
-        <!-- Cabecera Minimalista Flotante -->
         <div id="header">
             <div class="header-left">
-                <!-- Botón Logo Bloque de Tierra (SVG) -->
                 <button class="logo-menu-btn" onclick="toggleSidebar()" title="Ver historial">
                     <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
                         <polygon points="50,10 90,30 50,50 10,30" fill="#6DA243" />
@@ -346,15 +170,15 @@
                         <polygon points="50,50 90,30 90,35 80,40 80,47 65,55 65,50 50,58" fill="#4B772A" />
                     </svg>
                 </button>
-                
-                <!-- Botón Nuevo Chat Discreto -->
                 <button class="quick-new-chat-btn" onclick="createNewChat()" title="Nuevo Chat">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                 </button>
             </div>
-            
             <div class="header-actions">
-                <!-- Botón Borrar Discreto -->
+                <div class="auth-actions" id="auth-container">
+                    <button class="auth-btn" onclick="openAuthModal('login')">Iniciar sesión</button>
+                    <button class="auth-btn auth-btn-primary" onclick="openAuthModal('register')">Crear cuenta</button>
+                </div>
                 <button class="icon-btn" onclick="clearCurrentChat()" title="Limpiar Chat">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
                 </button>
@@ -369,18 +193,13 @@
                     <span id="file-name-text"></span>
                     <button class="remove-file-btn" onclick="removeFile()">×</button>
                 </div>
-                
                 <textarea id="user-input" rows="1" placeholder="Habla con CraftGPT..." oninput="autoResize(this)"></textarea>
-
                 <div class="bottom-controls" style="display: contents;">
                     <div class="left-controls" style="display: flex; gap: 8px;">
-                        <!-- Botón Clip Minimalista -->
                         <label class="attach-btn" title="Adjuntar archivo">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>
                             <input type="file" id="file-input" style="display: none;" onchange="handleFileSelect(event)">
                         </label>
-        
-                        <!-- Dropdowns -->
                         <div class="custom-dropdown" id="model-dropdown">
                             <button type="button" class="custom-btn" onclick="toggleMenu('model-menu', event)">
                                 <span id="model-selected-text">Flash 3.6</span>
@@ -394,7 +213,6 @@
                                 <div class="dropdown-item" onclick="selectModel('nvidia/nemotron-3-ultra-550b-a55b:free', 'Nemotron Ultra')">Nemotron Ultra</div>
                             </div>
                         </div>
-        
                         <div class="custom-dropdown" id="version-dropdown">
                             <button type="button" class="custom-btn" onclick="toggleMenu('version-menu', event)">
                                 <span id="version-selected-text">MC 26.2</span>
@@ -408,9 +226,8 @@
                             </div>
                         </div>
                     </div>
-                    
                     <button class="send-btn" id="send-button" onclick="sendMessage()" disabled>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
                     </button>
                 </div>
             </div>
@@ -418,27 +235,180 @@
     </div>
 
     <script>
-        // --- SISTEMA DE MODAL PERSONALIZADO ---
         let confirmActionCallback = null;
-
         function showConfirm(message, callback) {
             document.getElementById('custom-confirm-message').textContent = message;
             document.getElementById('custom-confirm-overlay').style.display = 'flex';
             confirmActionCallback = callback;
         }
-
         function closeConfirm() {
             document.getElementById('custom-confirm-overlay').style.display = 'none';
             confirmActionCallback = null;
         }
-
         document.getElementById('custom-confirm-yes').addEventListener('click', () => {
             if (confirmActionCallback) confirmActionCallback();
             closeConfirm();
         });
 
+        let authMode = 'register';
+        let pendingRegistrationData = null;
 
-        // --- SISTEMA DE SESIONES Y CHATS ---
+        function openAuthModal(mode) {
+            authMode = mode;
+            const titleEl = document.getElementById('auth-modal-title');
+            const submitBtnText = document.getElementById('auth-submit-btn-text');
+            const usernameContainer = document.getElementById('username-field-container');
+            
+            document.getElementById('auth-step-1').style.display = 'block';
+            document.getElementById('auth-step-2').style.display = 'none';
+
+            if (mode === 'register') {
+                titleEl.textContent = 'Crear cuenta';
+                submitBtnText.textContent = 'Registrarse';
+                usernameContainer.style.display = 'block';
+            } else {
+                titleEl.textContent = 'Iniciar sesión';
+                submitBtnText.textContent = 'Entrar sin contraseña';
+                usernameContainer.style.display = 'none';
+            }
+
+            document.getElementById('auth-email').value = '';
+            if (document.getElementById('auth-username')) {
+                document.getElementById('auth-username').value = '';
+            }
+            document.getElementById('auth-modal-overlay').style.display = 'flex';
+        }
+
+        function closeAuthModal() {
+            document.getElementById('auth-modal-overlay').style.display = 'none';
+            pendingRegistrationData = null;
+        }
+
+        async function handleAuthSubmit(event) {
+            event.preventDefault();
+            const email = document.getElementById('auth-email').value.trim();
+            if (!email) return;
+
+            if (authMode === 'register') {
+                const usernameInput = document.getElementById('auth-username').value.trim();
+                const username = usernameInput || email.split('@')[0];
+
+                try {
+                    const res = await fetch('/api/register', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ username, email })
+                    });
+                    const data = await res.json();
+                    if (!res.ok) {
+                        alert(data.error || 'Error al registrarse');
+                        return;
+                    }
+
+                    pendingRegistrationData = { email, username };
+                    document.getElementById('auth-step-1').style.display = 'none';
+                    document.getElementById('auth-step-2').style.display = 'block';
+                    document.getElementById('verification-notice').textContent = `Hemos enviado un código a ${email}. Ingrésalo a continuación:`;
+
+                    if (data.debugCode) {
+                        document.getElementById('mock-code-display').style.display = 'block';
+                        document.getElementById('mock-code-display').textContent = data.debugCode;
+                    }
+                } catch(e) {
+                    alert('Error de conexión con el servidor');
+                }
+            } else {
+                try {
+                    const res = await fetch('/api/login', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email })
+                    });
+                    const data = await res.json();
+                    if (!res.ok) {
+                        alert(data.error || 'Error al iniciar sesión');
+                        return;
+                    }
+
+                    localStorage.setItem('craftgpt_user', JSON.stringify(data.user));
+                    closeAuthModal();
+                    updateAuthUI();
+                } catch(e) {
+                    alert('Error de conexión con el servidor');
+                }
+            }
+        }
+
+        async function verifyEmailCode() {
+            const code = document.getElementById('verification-code-input').value.trim();
+            if (!code || !pendingRegistrationData) return;
+
+            try {
+                const res = await fetch('/api/verify-code', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: pendingRegistrationData.email, code })
+                });
+                const data = await res.json();
+                if (!res.ok) {
+                    alert(data.error || 'Código incorrecto');
+                    return;
+                }
+
+                localStorage.setItem('craftgpt_user', JSON.stringify(data.user));
+                closeAuthModal();
+                updateAuthUI();
+                alert('¡Cuenta creada y correo confirmado con éxito!');
+            } catch(e) {
+                alert('Error de conexión con el servidor');
+            }
+        }
+
+        async function handleGoogleLogin() {
+            const googleEmail = "usuario.google@gmail.com";
+            const googleUsername = "GoogleUser";
+
+            try {
+                const res = await fetch('/api/google-auth', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: googleEmail, username: googleUsername })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    localStorage.setItem('craftgpt_user', JSON.stringify(data.user));
+                    closeAuthModal();
+                    updateAuthUI();
+                }
+            } catch(e) {
+                alert('Error de conexión con el servidor');
+            }
+        }
+
+        function logoutUser() {
+            showConfirm("¿Deseas cerrar sesión?", () => {
+                localStorage.removeItem('craftgpt_user');
+                updateAuthUI();
+            });
+        }
+
+        function updateAuthUI() {
+            const authContainer = document.getElementById('auth-container');
+            const savedUser = localStorage.getItem('craftgpt_user');
+            if (savedUser) {
+                const user = JSON.parse(savedUser);
+                authContainer.innerHTML = `
+                    <div class="user-email-badge" title="${user.email}">👤 ${user.username || user.email}</div>
+                    <button class="auth-btn" onclick="logoutUser()">Salir</button>
+                `;
+            } else {
+                authContainer.innerHTML = `
+                    <button class="auth-btn" onclick="openAuthModal('login')">Iniciar sesión</button>
+                    <button class="auth-btn auth-btn-primary" onclick="openAuthModal('register')">Crear cuenta</button>
+                `;
+            }
+        }
+
         let sessions = JSON.parse(localStorage.getItem('craftgpt_sessions')) || [];
         let currentSessionId = localStorage.getItem('craftgpt_current_session_id') || null;
         let chatHistory = [];
@@ -450,16 +420,7 @@
         const geminiThoughts = ["Analizando...", "Pensando...", "Escribiendo código..."];
 
         window.onload = () => {
-            if (sessions.length === 0 && localStorage.getItem('craftgpt_chat_history')) {
-                const oldHistory = JSON.parse(localStorage.getItem('craftgpt_chat_history'));
-                if (oldHistory.length > 0) {
-                    const newSession = { id: Date.now().toString(), title: "Chat anterior", history: oldHistory };
-                    sessions.push(newSession);
-                    currentSessionId = newSession.id;
-                    localStorage.removeItem('craftgpt_chat_history');
-                    saveSessionsToLocal();
-                }
-            }
+            updateAuthUI();
             if (!currentSessionId || !sessions.find(s => s.id === currentSessionId)) {
                 createNewChat(false);
             } else {
@@ -474,7 +435,7 @@
             renderSidebar();
         }
 
-        function createNewChat(render = true) {
+        function createNewChat() {
             const newSessionId = Date.now().toString();
             sessions.unshift({ id: newSessionId, title: "Nuevo Chat", history: [] });
             currentSessionId = newSessionId;
@@ -533,13 +494,11 @@
             document.getElementById('sidebar').classList.toggle('open');
             document.getElementById('overlay').classList.toggle('show');
         }
-        
         function closeSidebar() {
             document.getElementById('sidebar').classList.remove('open');
             document.getElementById('overlay').classList.remove('show');
         }
 
-        // --- SISTEMA DE DROPDOWNS ---
         function toggleMenu(menuId, event) {
             event.stopPropagation();
             const menu = document.getElementById(menuId);
@@ -565,7 +524,6 @@
             document.querySelectorAll('.dropdown-menu').forEach(m => m.classList.remove('show'));
         });
 
-        // --- TEXTAREA AUTO-RESIZE Y ESTADO DE BOTÓN ---
         const userInput = document.getElementById("user-input");
         const sendBtn = document.getElementById("send-button");
 
@@ -582,10 +540,8 @@
                 sendBtn.setAttribute('disabled', 'true');
             }
         }
-
         userInput.addEventListener('input', checkInputState);
 
-        // --- MANEJO DE ARCHIVOS ---
         function handleFileSelect(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -593,9 +549,8 @@
             reader.onload = function(e) {
                 attachedFileText = e.target.result;
                 attachedFileName = file.name;
-                const indicator = document.getElementById('file-indicator');
                 document.getElementById('file-name-text').textContent = `📎 ${file.name}`;
-                indicator.style.display = 'flex';
+                document.getElementById('file-indicator').style.display = 'flex';
                 checkInputState();
             };
             reader.readAsText(file);
@@ -609,7 +564,6 @@
             checkInputState();
         }
 
-        // --- RENDERIZADO Y ENVÍO ---
         function formatMarkdown(text) {
             let processedText = text.replace(/===\s*ARCHIVO:\s*([^\s=]+)\s*===/g, '\n<div class="minimal-file-path">📁 $1</div>\n');
             let html = marked.parse(processedText);
@@ -698,7 +652,7 @@
             let messageToSend = text;
             if (attachedFileText) {
                 messageToSend = `[Archivo adjunto: ${attachedFileName}]\n\`\`\`\n${attachedFileText}\n\`\`\`\n\n${text}`;
-                removeFile(); // Limpia el archivo visualmente
+                removeFile();
             }
 
             const session = sessions.find(s => s.id === currentSessionId);
@@ -708,7 +662,6 @@
 
             chat.innerHTML += `<div class="message user"><div class="bubble">${messageToSend}</div></div>`;
             
-            // Reset input
             input.value = '';
             input.style.height = 'auto';
             checkInputState();
@@ -721,7 +674,7 @@
             let thoughtIndex = 0;
             chat.innerHTML += `
                 <div class="message assistant" id="${loadingId}">
-                    <div class="bubble loading-action"><span id="${loadingId}-text">${geminiThoughts[0]}</span></div>
+                    <div class="bubble" style="color: #888; font-style: italic;"><span id="${loadingId}-text">${geminiThoughts[0]}</span></div>
                 </div>
             `;
             chat.scrollTop = chat.scrollHeight;
@@ -740,7 +693,6 @@
                 });
                 
                 const data = await res.json();
-                
                 clearInterval(thoughtInterval);
                 document.getElementById(loadingId).remove();
                 
