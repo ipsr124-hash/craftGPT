@@ -1,12 +1,31 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
+const sqlite3 = require('sqlite3').verbose();
 
 const PORT = process.env.PORT || 7000;
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || '';
 const DEFAULT_MODEL = process.env.GEMINI_MODEL || 'gemini-3.6-flash';
 const FALLBACK_MODEL = 'gemini-3.5-flash-lite';
+
+// Configuración e inicialización de SQLite
+const dbPath = path.join(__dirname, 'craftgpt.db');
+const db = new sqlite3.Database(dbPath, (err) => {
+    if (err) {
+        console.error('❌ Error al conectar con SQLite:', err.message);
+    } else {
+        console.log('✅ Base de datos SQLite conectada correctamente (craftgpt.db).');
+        db.run(`CREATE TABLE IF NOT EXISTS chats (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            role TEXT,
+            content TEXT,
+            model TEXT,
+            version TEXT,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )`);
+    }
+});
 
 function readDatapackFolder(dir, baseDir = dir) {
     let structureText = "";
@@ -97,7 +116,6 @@ async function callGemini(model, contents) {
 }
 
 async function callOpenRouter(model, contents) {
-    // Convertir historial al formato de OpenRouter (messages)
     const messages = [
         { role: 'system', content: SYSTEM_PROMPT },
         ...contents.map(c => ({
@@ -130,6 +148,20 @@ const server = http.createServer(async (req, res) => {
         return;
     }
 
+    // Endpoint opcional para ver el historial guardado en SQLite
+    if (req.url === '/api/history' && req.method === 'GET') {
+        db.all(`SELECT * FROM chats ORDER BY created_at DESC LIMIT 50`, [], (err, rows) => {
+            if (err) {
+                res.writeHead(500, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: err.message }));
+                return;
+            }
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify(rows));
+        });
+        return;
+    }
+
     if (req.url === '/api/chat' && req.method === 'POST') {
         let body = '';
         req.on('data', chunk => { body += chunk; });
@@ -139,6 +171,13 @@ const server = http.createServer(async (req, res) => {
                 let contents = data.contents || [];
                 const selectedModel = data.model || DEFAULT_MODEL;
                 const mcVersion = data.version || '26.2';
+
+                // Guardar el mensaje del usuario en SQLite
+                const userOriginalText = contents.length > 0 ? contents[contents.length - 1].parts[0].text : '';
+                if (userOriginalText) {
+                    db.run(`INSERT INTO chats (role, content, model, version) VALUES (?, ?, ?, ?)`, 
+                        ['user', userOriginalText, selectedModel, mcVersion]);
+                }
 
                 if (contents.length > 0) {
                     contents = contents.map((msg, index) => {
@@ -154,6 +193,7 @@ const server = http.createServer(async (req, res) => {
 
                 const isOpenRouter = selectedModel.includes('/') || selectedModel.includes(':free');
                 let response, result;
+                let replyText = "Sin respuesta del modelo.";
 
                 if (isOpenRouter) {
                     if (!OPENROUTER_API_KEY) {
@@ -165,16 +205,11 @@ const server = http.createServer(async (req, res) => {
                     response = openRouterRes.response;
                     result = openRouterRes.result;
 
-                    let replyText = "Sin respuesta del modelo.";
                     if (result.choices && result.choices[0]?.message?.content) {
                         replyText = result.choices[0].message.content;
                     } else if (result.error) {
                         replyText = `Error de OpenRouter: ${result.error.message || JSON.stringify(result.error)}`;
                     }
-
-                    res.writeHead(200, { 'Content-Type': 'application/json' });
-                    res.end(JSON.stringify({ respuesta: replyText }));
-                    return;
                 } else {
                     if (!GEMINI_API_KEY) {
                         res.writeHead(500, { 'Content-Type': 'application/json' });
@@ -194,19 +229,19 @@ const server = http.createServer(async (req, res) => {
 
                     if (!response.ok) {
                         const errorMsg = result.error?.message || JSON.stringify(result);
-                        res.writeHead(200, { 'Content-Type': 'application/json' });
-                        res.end(JSON.stringify({ respuesta: `Error de la API: ${errorMsg}` }));
-                        return;
-                    }
-
-                    let replyText = "Sin respuesta del modelo.";
-                    if (result.candidates && result.candidates[0]?.content?.parts?.[0]?.text) {
+                        replyText = `Error de la API: ${errorMsg}`;
+                    } else if (result.candidates && result.candidates[0]?.content?.parts?.[0]?.text) {
                         replyText = result.candidates[0].content.parts[0].text;
                     }
-
-                    res.writeHead(200, { 'Content-Type': 'application/json' });
-                    res.end(JSON.stringify({ respuesta: replyText }));
                 }
+
+                // Guardar la respuesta del asistente en SQLite
+                db.run(`INSERT INTO chats (role, content, model, version) VALUES (?, ?, ?, ?)`, 
+                    ['assistant', replyText, selectedModel, mcVersion]);
+
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ respuesta: replyText }));
+
             } catch (err) {
                 res.writeHead(500, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ respuesta: "Error interno en el servidor: " + err.message }));
