@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CraftGPT</title>
+    <!-- Icono de la pestaña (Favicon) usando el SVG directamente -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpolygon points='50,10 90,30 50,50 10,30' fill='%236DA243' /%3E%3Cpolygon points='50,50 90,30 90,75 50,95' fill='%23754C2B' /%3E%3Cpolygon points='10,30 50,50 50,95 10,75' fill='%23875833' /%3E%3Cpolygon points='10,30 50,50 50,58 35,50 35,55 20,47 20,40 10,35' fill='%23588B31' /%3E%3Cpolygon points='50,50 90,30 90,35 80,40 80,47 65,55 65,50 50,58' fill='%234B772A' /%3E%3C/svg%3E">
+    
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <style>
@@ -24,15 +27,13 @@
             border-right: 1px solid #2f2f2f;
             display: flex;
             flex-direction: column;
-            position: absolute; /* Superpuesto */
+            position: absolute;
             height: 100vh;
-            transform: translateX(-100%); /* Oculto a la izquierda */
+            transform: translateX(-100%);
             transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             z-index: 1000;
         }
-        #sidebar.open {
-            transform: translateX(0);
-        }
+        #sidebar.open { transform: translateX(0); }
         
         .sidebar-header {
             padding: 20px 16px;
@@ -87,11 +88,7 @@
         .chat-item:hover { background-color: #2a2a2a; color: #ececec; }
         .chat-item.active { background-color: #333; color: #fff; font-weight: 500; }
         
-        .chat-title-text {
-            overflow: hidden;
-            text-overflow: ellipsis;
-            flex: 1;
-        }
+        .chat-title-text { overflow: hidden; text-overflow: ellipsis; flex: 1; }
         
         .delete-chat-btn {
             background: transparent;
@@ -105,366 +102,193 @@
         .chat-item:hover .delete-chat-btn { display: block; }
         .delete-chat-btn:hover { color: #ff6b6b; background-color: #444; }
 
-        /* Fondo oscuro al abrir sidebar */
+        /* Fondos y Overlays */
         #overlay {
-            display: none;
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.4);
-            z-index: 999;
-            backdrop-filter: blur(2px);
+            display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.4); z-index: 999; backdrop-filter: blur(2px);
         }
         #overlay.show { display: block; }
 
-        /* --- CONTENIDO PRINCIPAL --- */
-        #main-wrapper {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            min-width: 0;
-            position: relative;
+        /* --- MODAL DE CONFIRMACIÓN MINIMALISTA --- */
+        #custom-confirm-overlay {
+            display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.6); z-index: 2000; align-items: center; justify-content: center;
+            backdrop-filter: blur(4px);
         }
+        .custom-confirm-box {
+            background-color: #212121; border: 1px solid #3a3a3a; border-radius: 16px;
+            padding: 24px; width: 320px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        #custom-confirm-message { margin-bottom: 24px; font-size: 15px; color: #ececec; font-weight: 500; }
+        .custom-confirm-actions { display: flex; gap: 12px; justify-content: center; }
+        .modal-btn {
+            padding: 8px 16px; border-radius: 12px; font-size: 13px; font-weight: 500;
+            cursor: pointer; border: 1px solid transparent; transition: all 0.2s; outline: none; font-family: inherit;
+        }
+        .cancel-btn { background-color: #383838; color: #ececec; border-color: #4f4f4f; }
+        .cancel-btn:hover { background-color: #444; }
+        .danger-btn { background-color: #b73a3a; color: #fff; }
+        .danger-btn:hover { background-color: #d34040; }
+
+        /* --- CONTENIDO PRINCIPAL --- */
+        #main-wrapper { flex: 1; display: flex; flex-direction: column; min-width: 0; position: relative; }
         
         /* CABECERA MINIMALISTA */
         #header {
-            padding: 12px 24px;
-            background-color: transparent; /* Transparente para ser más limpio */
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            position: absolute;
-            top: 0; left: 0; right: 0;
-            z-index: 10;
+            padding: 12px 24px; background-color: transparent; display: flex;
+            align-items: center; justify-content: space-between; position: absolute;
+            top: 0; left: 0; right: 0; z-index: 10;
         }
         
-        .header-left {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
+        .header-left { display: flex; align-items: center; gap: 12px; }
 
         /* Logo de Bloque (Botón Menú) */
         .logo-menu-btn {
-            background: transparent;
-            border: none;
-            cursor: pointer;
-            padding: 6px;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            background: transparent; border: none; cursor: pointer; padding: 6px;
+            border-radius: 8px; display: flex; align-items: center; justify-content: center;
             transition: background-color 0.2s;
         }
         .logo-menu-btn:hover { background-color: #2a2a2a; }
-        
-        .logo-menu-btn svg {
-            width: 24px;
-            height: 24px;
-        }
+        .logo-menu-btn svg { width: 24px; height: 24px; }
 
         /* Botón discreto Nuevo Chat */
         .quick-new-chat-btn {
-            background: transparent;
-            border: none;
-            color: #888;
-            cursor: pointer;
-            padding: 6px;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.2s;
+            background: transparent; border: none; color: #888; cursor: pointer;
+            padding: 6px; border-radius: 8px; display: flex; align-items: center;
+            justify-content: center; transition: all 0.2s;
         }
         .quick-new-chat-btn:hover { background-color: #2a2a2a; color: #ececec; }
 
-        /* Botón de borrar (arriba derecha) */
         .header-actions { display: flex; gap: 10px; }
         .icon-btn {
-            background: transparent;
-            border: none;
-            color: #888;
-            cursor: pointer;
-            padding: 8px;
-            border-radius: 8px;
-            transition: all 0.2s;
+            background: transparent; border: none; color: #888; cursor: pointer;
+            padding: 8px; border-radius: 8px; transition: all 0.2s;
         }
         .icon-btn:hover { background-color: #2a2a2a; color: #ececec; }
 
 
         #chat-container {
-            flex: 1;
-            overflow-y: auto;
-            padding: 60px 20px 20px 20px; /* Padding top extra para la cabecera flotante */
-            display: flex;
-            flex-direction: column;
-            gap: 24px;
-            max-width: 800px;
-            margin: 0 auto;
-            width: 100%;
-            scrollbar-width: none;
+            flex: 1; overflow-y: auto; padding: 60px 20px 20px 20px;
+            display: flex; flex-direction: column; gap: 24px; max-width: 800px;
+            margin: 0 auto; width: 100%; scrollbar-width: none;
         }
         #chat-container::-webkit-scrollbar { display: none; }
         
         .message { display: flex; gap: 16px; line-height: 1.6; }
         .user { justify-content: flex-end; }
         .user .bubble {
-            background-color: #2f2f2f;
-            color: #ececec;
-            padding: 12px 18px;
-            border-radius: 20px;
-            max-width: 80%;
-            white-space: pre-wrap;
-            font-size: 15px;
+            background-color: #2f2f2f; color: #ececec; padding: 12px 18px;
+            border-radius: 20px; max-width: 80%; white-space: pre-wrap; font-size: 15px;
         }
         .assistant { justify-content: flex-start; width: 100%; }
-        .assistant .bubble {
-            background-color: transparent;
-            color: #ececec;
-            padding: 4px 0;
-            max-width: 100%;
-            font-size: 15px;
-        }
+        .assistant .bubble { background-color: transparent; color: #ececec; padding: 4px 0; max-width: 100%; font-size: 15px; }
         .assistant .bubble h1, .assistant .bubble h2, .assistant .bubble h3 { margin: 16px 0 8px 0; color: #fff; font-weight: 600; }
         .assistant .bubble p { margin-bottom: 12px; }
         .assistant .bubble ul, .assistant .bubble ol { margin-left: 20px; margin-bottom: 12px; }
         
-        /* Pestaña de archivo y Código */
+        /* Código y UI de Archivos */
         .minimal-file-path {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            background-color: #2a2a2a;
-            color: #9cdcfe;
-            padding: 4px 10px;
-            border-radius: 6px 6px 0 0;
-            font-size: 12px;
-            font-family: Consolas, monospace;
-            border: 1px solid #333;
-            border-bottom: none;
-            margin-top: 14px;
-            margin-bottom: -12px;
-            position: relative;
-            z-index: 1;
+            display: inline-flex; align-items: center; gap: 6px; background-color: #2a2a2a;
+            color: #9cdcfe; padding: 4px 10px; border-radius: 6px 6px 0 0; font-size: 12px;
+            font-family: Consolas, monospace; border: 1px solid #333; border-bottom: none;
+            margin-top: 14px; margin-bottom: -12px; position: relative; z-index: 1;
         }
         .code-block-wrapper {
-            background-color: #1e1e1e;
-            border: 1px solid #333;
-            border-radius: 8px;
-            margin: 12px 0;
-            overflow: hidden;
-            position: relative;
-            z-index: 0;
+            background-color: #1e1e1e; border: 1px solid #333; border-radius: 8px;
+            margin: 12px 0; overflow: hidden; position: relative; z-index: 0;
         }
         .code-header {
-            background-color: #2a2a2a;
-            padding: 6px 12px;
-            font-size: 12px;
-            color: #b0b0b0;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid #333;
+            background-color: #2a2a2a; padding: 6px 12px; font-size: 12px; color: #b0b0b0;
+            display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333;
         }
         .copy-btn {
-            background: transparent;
-            border: none;
-            color: #b0b0b0;
-            cursor: pointer;
-            font-size: 12px;
-            padding: 2px 6px;
-            border-radius: 4px;
+            background: transparent; border: none; color: #b0b0b0; cursor: pointer;
+            font-size: 12px; padding: 2px 6px; border-radius: 4px;
         }
         .copy-btn:hover { background-color: #383838; color: #fff; }
         .code-block-wrapper pre {
-            padding: 16px;
-            font-family: Consolas, Monaco, monospace;
-            font-size: 13px;
-            color: #dcdcdc;
-            margin: 0;
-            white-space: pre-wrap;
-            word-wrap: break-word;
-            overflow-x: hidden;
+            padding: 16px; font-family: Consolas, Monaco, monospace; font-size: 13px;
+            color: #dcdcdc; margin: 0; white-space: pre-wrap; word-wrap: break-word; overflow-x: hidden;
         }
 
         .loading-action { color: #888; font-style: italic; display: flex; align-items: center; gap: 8px; }
         
-        /* Botón descargar Datapack */
         .datapack-card {
-            background-color: #1e1e1e;
-            border: 1px solid #333;
-            border-radius: 12px;
-            padding: 10px 16px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-top: 14px;
-            max-width: 380px;
+            background-color: #1e1e1e; border: 1px solid #333; border-radius: 12px;
+            padding: 10px 16px; display: flex; align-items: center; justify-content: space-between;
+            margin-top: 14px; max-width: 380px;
         }
         .datapack-info { display: flex; align-items: center; gap: 12px; }
         .datapack-icon-box {
-            background-color: #2a2a2a;
-            border: 1px solid #3a3a3a;
-            border-radius: 8px;
-            padding: 8px 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #9cdcfe;
+            background-color: #2a2a2a; border: 1px solid #3a3a3a; border-radius: 8px;
+            padding: 8px 10px; display: flex; align-items: center; justify-content: center; color: #9cdcfe;
         }
         .datapack-filename { font-size: 14px; color: #ececec; font-weight: 500; }
         .datapack-download-btn {
-            background: transparent;
-            border: 1px solid #444;
-            color: #ececec;
-            padding: 6px 14px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 13px;
-            font-weight: 500;
+            background: transparent; border: 1px solid #444; color: #ececec; padding: 6px 14px;
+            border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 500;
         }
         .datapack-download-btn:hover { background-color: #333; border-color: #555; }
 
-        /* Entradas y botones inferiores */
+        /* Controles Inferiores */
         #input-container { padding: 20px; background-color: #212121; }
         .input-box {
-            max-width: 800px;
-            margin: 0 auto;
-            display: flex;
-            background-color: #2f2f2f;
-            border-radius: 24px;
-            padding: 8px 12px;
-            align-items: flex-end; /* Alinea al fondo para el textarea expandible */
-            gap: 8px;
-            position: relative;
-            border: 1px solid #444;
-            transition: border-color 0.2s;
+            max-width: 800px; margin: 0 auto; display: flex; background-color: #2f2f2f;
+            border-radius: 24px; padding: 8px 12px; align-items: flex-end; gap: 8px;
+            position: relative; border: 1px solid #444; transition: border-color 0.2s;
         }
         .input-box:focus-within { border-color: #666; }
         
         .custom-btn {
-            background-color: #383838;
-            color: #ececec;
-            border: 1px solid #4f4f4f;
-            padding: 6px 14px;
-            border-radius: 18px;
-            outline: none;
-            cursor: pointer;
-            font-size: 13px;
-            font-weight: 500;
-            font-family: inherit;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
-            white-space: nowrap;
-            height: 32px; /* Altura fija para botones inferiores */
-            margin-bottom: 2px;
+            background-color: #383838; color: #ececec; border: 1px solid #4f4f4f; padding: 6px 14px;
+            border-radius: 18px; outline: none; cursor: pointer; font-size: 13px; font-weight: 500;
+            font-family: inherit; display: flex; align-items: center; justify-content: center;
+            gap: 6px; white-space: nowrap; height: 32px; margin-bottom: 2px;
         }
         .custom-btn:hover { background-color: #444; border-color: #666; }
         
-        /* Botón de adjuntar archivo minimalista */
         .attach-btn {
-            background: transparent;
-            border: none;
-            color: #888;
-            cursor: pointer;
-            padding: 8px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.2s;
-            margin-bottom: 2px;
+            background: transparent; border: none; color: #888; cursor: pointer; padding: 8px;
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            transition: all 0.2s; margin-bottom: 2px;
         }
         .attach-btn:hover { background-color: #383838; color: #ececec; }
 
         /* Dropdowns */
         .custom-dropdown { position: relative; display: inline-block; margin-bottom: 2px;}
         .dropdown-menu {
-            display: none;
-            position: absolute;
-            bottom: calc(100% + 12px);
-            left: 0;
-            background-color: #2a2a2a;
-            border: 1px solid #4f4f4f;
-            border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
-            z-index: 100;
-            min-width: 180px;
-            overflow: hidden;
-            padding: 6px 0;
+            display: none; position: absolute; bottom: calc(100% + 12px); left: 0;
+            background-color: #2a2a2a; border: 1px solid #4f4f4f; border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5); z-index: 100; min-width: 180px; overflow: hidden; padding: 6px 0;
         }
         .dropdown-menu.show { display: block; }
-        .dropdown-group-title {
-            padding: 8px 14px 4px 14px;
-            font-size: 11px;
-            font-weight: 600;
-            color: #888;
-            text-transform: uppercase;
-        }
-        .dropdown-item {
-            padding: 8px 14px;
-            font-size: 13px;
-            color: #ececec;
-            cursor: pointer;
-            font-weight: 500;
-        }
+        .dropdown-group-title { padding: 8px 14px 4px 14px; font-size: 11px; font-weight: 600; color: #888; text-transform: uppercase; }
+        .dropdown-item { padding: 8px 14px; font-size: 13px; color: #ececec; cursor: pointer; font-weight: 500; }
         .dropdown-item:hover { background-color: #383838; color: #fff; }
 
         textarea {
-            flex: 1;
-            background: transparent;
-            border: none;
-            color: #fff;
-            font-size: 15px;
-            outline: none;
-            resize: none;
-            max-height: 200px;
-            font-family: inherit;
-            padding: 8px 4px;
-            margin: 0;
-            line-height: 1.5;
-            scrollbar-width: none;
-            min-height: 40px;
+            flex: 1; background: transparent; border: none; color: #fff; font-size: 15px; outline: none;
+            resize: none; max-height: 200px; font-family: inherit; padding: 8px 4px; margin: 0;
+            line-height: 1.5; scrollbar-width: none; min-height: 40px;
         }
         textarea::-webkit-scrollbar { display: none; }
         
         #file-indicator {
-            font-size: 11px;
-            color: #4CAF50;
-            position: absolute;
-            top: -24px;
-            left: 16px;
-            background: #2a2a2a;
-            padding: 4px 10px;
-            border-radius: 6px;
-            border: 1px solid #444;
-            display: none;
-            align-items: center;
-            gap: 6px;
+            font-size: 11px; color: #4CAF50; position: absolute; top: -24px; left: 16px;
+            background: #2a2a2a; padding: 4px 10px; border-radius: 6px; border: 1px solid #444;
+            display: none; align-items: center; gap: 6px;
         }
         .remove-file-btn { background: transparent; border: none; color: #888; cursor: pointer; font-size: 14px; line-height: 1;}
         .remove-file-btn:hover { color: #ff6b6b;}
 
         button.send-btn {
-            background-color: #ececec;
-            border: none;
-            color: #212121;
-            border-radius: 50%;
-            width: 32px;
-            height: 32px;
-            min-width: 32px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: transform 0.2s, background-color 0.2s;
-            margin-bottom: 4px;
-            margin-right: 2px;
+            background-color: #ececec; border: none; color: #212121; border-radius: 50%;
+            width: 32px; height: 32px; min-width: 32px; cursor: pointer; display: flex;
+            align-items: center; justify-content: center; transition: transform 0.2s, background-color 0.2s;
+            margin-bottom: 4px; margin-right: 2px;
         }
         button.send-btn:hover { background-color: #fff; transform: scale(1.05);}
         button.send-btn:disabled { background-color: #444; color: #888; cursor: not-allowed; transform: none; }
-        
         button.send-btn svg { width: 16px; height: 16px; }
 
         /* Adaptación móvil */
@@ -474,7 +298,7 @@
             #input-container { padding: 10px; }
             .input-box { flex-wrap: wrap; border-radius: 16px; padding: 8px; gap: 6px; }
             .custom-btn { font-size: 12px; padding: 5px 10px; height: 28px;}
-            textarea { width: 100%; order: -1; min-height: 40px; } /* Textarea arriba en móvil */
+            textarea { width: 100%; order: -1; min-height: 40px; } 
             .bottom-controls { display: flex; width: 100%; justify-content: space-between; align-items: center; }
             .left-controls { display: flex; gap: 6px; align-items: center;}
         }
@@ -482,6 +306,17 @@
 </head>
 <body>
     
+    <!-- Modal Personalizado de Confirmación -->
+    <div id="custom-confirm-overlay">
+        <div class="custom-confirm-box">
+            <div id="custom-confirm-message">¿Estás seguro?</div>
+            <div class="custom-confirm-actions">
+                <button class="modal-btn cancel-btn" onclick="closeConfirm()">Cancelar</button>
+                <button class="modal-btn danger-btn" id="custom-confirm-yes">Borrar</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Panel Lateral (Oculto) -->
     <div id="overlay" onclick="toggleSidebar()"></div>
     <div id="sidebar">
@@ -504,15 +339,10 @@
                 <!-- Botón Logo Bloque de Tierra (SVG) -->
                 <button class="logo-menu-btn" onclick="toggleSidebar()" title="Ver historial">
                     <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-                        <!-- Top (Grass) -->
                         <polygon points="50,10 90,30 50,50 10,30" fill="#6DA243" />
-                        <!-- Right (Dirt) -->
                         <polygon points="50,50 90,30 90,75 50,95" fill="#754C2B" />
-                        <!-- Left (Dirt) -->
                         <polygon points="10,30 50,50 50,95 10,75" fill="#875833" />
-                        <!-- Grass Overhang Left -->
                         <polygon points="10,30 50,50 50,58 35,50 35,55 20,47 20,40 10,35" fill="#588B31" />
-                        <!-- Grass Overhang Right -->
                         <polygon points="50,50 90,30 90,35 80,40 80,47 65,55 65,50 50,58" fill="#4B772A" />
                     </svg>
                 </button>
@@ -588,6 +418,26 @@
     </div>
 
     <script>
+        // --- SISTEMA DE MODAL PERSONALIZADO ---
+        let confirmActionCallback = null;
+
+        function showConfirm(message, callback) {
+            document.getElementById('custom-confirm-message').textContent = message;
+            document.getElementById('custom-confirm-overlay').style.display = 'flex';
+            confirmActionCallback = callback;
+        }
+
+        function closeConfirm() {
+            document.getElementById('custom-confirm-overlay').style.display = 'none';
+            confirmActionCallback = null;
+        }
+
+        document.getElementById('custom-confirm-yes').addEventListener('click', () => {
+            if (confirmActionCallback) confirmActionCallback();
+            closeConfirm();
+        });
+
+
         // --- SISTEMA DE SESIONES Y CHATS ---
         let sessions = JSON.parse(localStorage.getItem('craftgpt_sessions')) || [];
         let currentSessionId = localStorage.getItem('craftgpt_current_session_id') || null;
@@ -645,22 +495,22 @@
 
         function deleteSession(id, event) {
             event.stopPropagation();
-            if(confirm("¿Borrar este chat?")) {
+            showConfirm("¿Eliminar este chat del historial?", () => {
                 sessions = sessions.filter(s => s.id !== id);
                 if (sessions.length === 0) createNewChat();
                 else if (currentSessionId === id) loadSession(sessions[0].id);
                 else saveSessionsToLocal();
-            }
+            });
         }
 
         function clearCurrentChat() {
-            if (confirm("¿Limpiar esta conversación?")) {
+            showConfirm("¿Limpiar esta conversación actual?", () => {
                 chatHistory = [];
                 const session = sessions.find(s => s.id === currentSessionId);
                 if(session) { session.history = []; session.title = "Nuevo Chat"; }
                 saveSessionsToLocal();
                 document.getElementById('chat-container').innerHTML = '';
-            }
+            });
         }
 
         function renderSidebar() {
