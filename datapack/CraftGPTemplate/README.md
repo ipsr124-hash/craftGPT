@@ -1,6 +1,6 @@
-# VanillaDatapackFramework [VDF]
+# Datapack Rules and Tips [DRT]
 
-Hey there! **VanillaDatapackFramework [VDF]** is a clean, ready-to-use template for creating data packs in Minecraft 1.21 and newer.
+Hey there! **Datapack Rules and Tips [DRT]** is a clean, ready-to-use template for creating data packs in Minecraft 1.21 and newer.
 
 This framework helps you write modern, fast, and organized code. It completely drops the old NBT format in favor of Minecraft's new **Data Components**, keeping your server running smoothly without lag (maximizing TPS).
 
