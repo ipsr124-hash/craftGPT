@@ -1,0 +1,12 @@
+{
+  "rewrites": [
+    { "source": "/", "destination": "/api/index?route=home" },
+    { "source": "/api/:path*", "destination": "/api/index?route=:path*" }
+  ],
+  "functions": {
+    "api/index.js": {
+      "includeFiles": "{index.html,datapack/**}",
+      "maxDuration": 60
+    }
+  }
+}
